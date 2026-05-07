@@ -1,0 +1,46 @@
+{
+  "summary": "First-iteration full-stack testing of Portal LEVA. Backend: 28/28 pytest cases pass after fixing one critical bug (POST /api/auth/register threw 500 because user_doc still had the Mongo ObjectId after insert_one). Frontend: login/dashboard/wiki list/editor/article view/cmd+k palette/admin/biblioteca all render and integrate with backend. Demo creds prefilled, Renault/Geely/Bajaj badges present, sidebar categories appear after navigation, article create+publish flow works end-to-end (URL changes to /wiki/{uuid} after save).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/register", "issue": "FIXED during testing — was returning 500 because returned dict still contained Mongo ObjectId `_id` after motor's insert_one mutated the doc. Patched to also exclude `_id` (see updated_files)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Initial Dashboard load", "issue": "Sidebar 'Categorias' section is empty on the first dashboard render after login (0 items). Categories appear correctly after navigating to any other page (Wiki/Admin/Biblioteca). Likely the Layout categories fetch races with the dashboard render, or auth-context not hydrated when Layout first mounts. Not blocking but inconsistent UX.", "affected_selectors": ["[data-testid^='nav-cat-']"]}
+    ],
+    "design_issues": [
+      {"screen": "Cmd+K command palette", "issues": ["Radix DialogContent missing DialogTitle and aria-describedby (console a11y warning). Wrap title in VisuallyHidden or add a visible DialogTitle."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Investigate why sidebar categories are empty on first dashboard render after login (likely fetchCategories not triggered until route change or AuthContext not ready). Trigger fetch in Layout after user is set.",
+    "Add a (visually hidden) DialogTitle/Description to the command palette Dialog to satisfy Radix a11y."
+  ],
+  "critical_code_review_comments": [
+    "auth.py register endpoint mutated user_doc with Mongo ObjectId before serialization — root cause of 500. Already fixed by excluding `_id` along with `password_hash`.",
+    "wiki.py: editor users can update any other user's article (update_article only checks role admin/editor, not authorship). Consider author_id check for editors.",
+    "wiki.py get_article: increments view_count even for the author/admin viewing their own draft, and on every refresh — consider de-duplicating per session.",
+    "files.py: `put_object` and `get_object` are sync calls invoked inside async endpoints; will block the event loop on large files. Wrap in run_in_executor for production.",
+    "auth.py: cookies use `secure=False` and no `domain` — will not be sent cross-site over HTTPS in some browsers when frontend and backend share origin via ingress this is OK, but mark as TODO for production hardening.",
+    "users_admin.py update_user allows admin to demote/lock themselves (no self-protection on role change/is_active=false).",
+    "Brute-force lockout is keyed on ip:email — easy to bypass by varying email; consider IP-only or per-account counters too."
+  ],
+  "updated_files": [
+    "/app/backend/auth.py (register endpoint excludes Mongo _id from response)",
+    "/app/backend/tests/backend_test.py (new pytest suite, 28 tests)"
+  ],
+  "success_rate": {"backend": "100% (28/28)", "frontend": "~95% (all flows render and integrate; minor categories-on-first-load and a11y warning)"},
+  "test_credentials": "Admin admin@levaportal.com / admin123, Editor editor@levaportal.com / editor123 (auto-seeded; verified in /app/memory/test_credentials.md)",
+  "seed_data_creation": "Tests create transient TEST_ articles and viewer users via register endpoint, cleaned up at end of suite. Categories lazy-seeded by backend.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest suite at /app/backend/tests/backend_test.py covers auth (login/register/me/logout/brute-force), wiki (CRUD, versions, viewer-403, editor-pending-flow), categories+tags+dashboard stats, files (upload pdf/list/download/delete), admin (users list, role update, pending/approve/reject, viewer-403). Run with: `pytest /app/backend/tests/backend_test.py -v --junitxml=/app/test_reports/pytest/pytest_results.xml`. The register-500 bug was fixed in this iteration. If main agent fixes the empty-categories-on-first-render issue, just re-run the playwright login→dashboard step and confirm `[data-testid^='nav-cat-']` count > 0 before navigation.",
+  "rca of the issue": "POST /api/auth/register: motor's `insert_one` injects `_id: ObjectId(...)` into the input dict in-place. The handler then built `public = {k: v ... if k != 'password_hash'}` which still contained the ObjectId, and FastAPI/Starlette failed to JSON-encode it ('ObjectId is not iterable'). Mitigation: also drop `_id` from the response dict (now patched). Reproduction: `curl -X POST $URL/api/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"x@y.com\",\"password\":\"abcdef\",\"name\":\"X\"}'` previously returned 500; now returns 200 with the user object."
+}

@@ -1,0 +1,75 @@
+{
+  "project": {
+    "name": "Portal LEVA",
+    "type": "corporate_saas_app",
+    "description": "Internal corporate knowledge management platform for an automotive dealership group (Renault, Geely, Bajaj). B2B internal tool. Professional, trustworthy, slightly premium."
+  },
+  "theme_and_archetype": {
+    "theme": "Light",
+    "archetype": "Archetype 4 (Swiss & High-Contrast)",
+    "description": "Authority, clarity, and function-first. Optimized for deep reading and knowledge retention with a slightly premium corporate automotive feel. Crisp whites, deep off-blacks, clean technical typography."
+  },
+  "typography": {
+    "primary_font": "Manrope",
+    "secondary_font": "IBM Plex Sans",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-black tracking-tighter text-slate-900",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight text-slate-800",
+      "h3": "text-xl sm:text-2xl font-semibold tracking-tight text-slate-800",
+      "h4": "text-lg sm:text-xl font-medium tracking-tight text-slate-800",
+      "body": "text-base font-normal leading-relaxed text-slate-600 font-sans",
+      "small_label": "text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
+    },
+    "guidelines": "Do not use generic sans for headings. Emphasize tracking and line-height for readability. Body font should be geometric and legible."
+  },
+  "colors": {
+    "background_base": "#FFFFFF",
+    "background_secondary": "#F8FAFC",
+    "text_primary": "#0F172A",
+    "text_secondary": "#475569",
+    "primary_accent": "#0F172A",
+    "interactive_brand": "#2563EB",
+    "border_subtle": "#E2E8F0",
+    "hover_state": "#F1F5F9",
+    "success_state": "#10B981",
+    "warning_state": "#F59E0B",
+    "danger_state": "#EF4444"
+  },
+  "layout_and_spacing": {
+    "spacing_scale": "Generous spacing. p-8 or p-12 for main containers to ensure breathing room. Containers with border must have internal padding.",
+    "sidebar": "Fixed left lateral navigation. w-64 or w-72. Clean, minimal, Notion-like item list. No default background colors for inactive items.",
+    "dashboard_grid": "Mode B (Control Room Grid) - Dense, structured. grid-cols-1 md:grid-cols-3 lg:grid-cols-4. gap-6. Every pixel must be utilized.",
+    "article_view": "max-w-4xl mx-auto for optimal reading width. Generous top padding (pt-12 or pt-16)."
+  },
+  "components": {
+    "surface_strategy": "Grid Borders & Flat Design. Cards have flat backgrounds with 1px subtle border (border-slate-200), no default shadow. Hover adds slight lift (-translate-y-1) and shadow-sm.",
+    "header_nav": "Sticky topbar with Crystal Glassmorphism (backdrop-blur-xl bg-white/70, border-b border-slate-200/50) for the search bar, breadcrumbs, and profile.",
+    "search": "Cmd+K Quick Search Dialog. Takes center stage when active, blurring the background. Use Shadcn Command component.",
+    "buttons": "Primary: Solid slate-900, text-white, hover:bg-slate-800. Secondary: Outline, border-slate-200, hover:bg-slate-50. Radius: max 8px (rounded-md)."
+  },
+  "media_urls": [
+    {
+      "category": "login_background",
+      "url": "https://static.prod-images.emergentagent.com/jobs/959f7354-92fb-4001-9efa-447a14795da2/images/03500dc57bf3eb1339ac600c02b3a2a865758769dc1749db53105d2bd03e8f51.png",
+      "description": "Abstract premium automotive lines, sleek metallic finish. Used for the split-screen login page background. Place behind an overlay of bg-slate-900/30."
+    }
+  ],
+  "accessibility_and_interactions": {
+    "contrast": "Ensure APCA/WCAG AA standards. Text on images must have sufficient contrast or overlay.",
+    "animations": "Micro-interactions on hover. Smooth page transitions. No jarring bouncing.",
+    "test_attributes": "All interactive elements MUST include data-testid attribute (e.g., data-testid='sidebar-nav-link')."
+  },
+  "iconography": {
+    "library": "lucide-react",
+    "style": "Stroke width 1.5, consistent size (w-5 h-5 for sidebar, w-4 h-4 for inline labels)."
+  },
+  "instructions_to_main_agent": [
+    "Use Shadcn components heavily for forms, dialogs, command palette (Cmd+K), and dropdowns. Customize them to remove the default Vercel look by applying the color palette and border radii specified here.",
+    "The UI should feel like a premium corporate version of Notion: lots of whitespace, strong typography, minimal borders, very calm design.",
+    "Implement the Notion-style block editor layout for the article view (Title, Tags, Categories, Breadcrumbs).",
+    "Make the lateral navigation sidebar collapsible with a smooth transition. Include nested tree views for categories.",
+    "Build the dashboard with the 'Control Room Grid' mode - using exact height matches and utilizing all pixels efficiently. Include sections for recent content and most accessed articles.",
+    "Ensure the application language and dummy text are in Portuguese (Brazilian).",
+    "Implement fluid experience (smooth scrolling, minimal page reloads, quick search)."
+  ]
+}

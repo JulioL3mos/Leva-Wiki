@@ -1,43 +1,48 @@
 import os
-import requests
+from pathlib import Path
 
-STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
+# Configuração para armazenamento local
+ROOT_DIR = Path(__file__).parent
+UPLOAD_DIR = ROOT_DIR / "uploads"
+UPLOAD_DIR.mkdir(exist_ok=True)
+
 APP_NAME = "portal-leva"
 
-_storage_key = None
-
-
 def init_storage():
-    global _storage_key
-    if _storage_key:
-        return _storage_key
-    emergent_key = os.environ.get("EMERGENT_LLM_KEY")
-    if not emergent_key:
-        raise RuntimeError("EMERGENT_LLM_KEY missing")
-    resp = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": emergent_key}, timeout=30)
-    resp.raise_for_status()
-    _storage_key = resp.json()["storage_key"]
-    return _storage_key
-
+    """Inicializa o diretório de uploads local."""
+    if not UPLOAD_DIR.exists():
+        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    return str(UPLOAD_DIR)
 
 def put_object(path: str, data: bytes, content_type: str) -> dict:
-    key = init_storage()
-    resp = requests.put(
-        f"{STORAGE_URL}/objects/{path}",
-        headers={"X-Storage-Key": key, "Content-Type": content_type},
-        data=data,
-        timeout=300,
-    )
-    resp.raise_for_status()
-    return resp.json()
-
+    """Salva um arquivo localmente."""
+    # O path vem como "portal-leva/uploads/user_id/file_id.ext"
+    # Vamos simplificar para salvar dentro da nossa pasta uploads
+    relative_path = path.replace(f"{APP_NAME}/", "")
+    full_path = UPLOAD_DIR / relative_path
+    
+    # Criar subpastas se necessário
+    full_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(full_path, "wb") as f:
+        f.write(data)
+    
+    return {
+        "path": relative_path,
+        "size": len(data),
+        "status": "success"
+    }
 
 def get_object(path: str):
-    key = init_storage()
-    resp = requests.get(
-        f"{STORAGE_URL}/objects/{path}",
-        headers={"X-Storage-Key": key},
-        timeout=120,
-    )
-    resp.raise_for_status()
-    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+    """Recupera um arquivo local."""
+    full_path = UPLOAD_DIR / path
+    if not full_path.exists():
+        raise FileNotFoundError(f"Arquivo não encontrado: {path}")
+    
+    with open(full_path, "rb") as f:
+        content = f.read()
+    
+    # Tenta deduzir o content type pela extensão se possível
+    import mimetypes
+    content_type, _ = mimetypes.guess_type(full_path)
+    return content, content_type or "application/octet-stream"

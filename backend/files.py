@@ -101,6 +101,16 @@ async def download_file(file_id: str, request: Request, user: dict = Depends(get
                     headers={"Content-Disposition": f'inline; filename="{record["original_filename"]}"'})
 
 
+@router.get("/raw/{path:path}")
+async def get_raw_file(path: str):
+    """Rota para visualizar arquivos diretamente (ex: imagens no editor)."""
+    try:
+        data, content_type = get_object(path)
+        return Response(content=data, media_type=content_type)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+
+
 @router.delete("/{file_id}")
 async def delete_file(file_id: str, request: Request, user: dict = Depends(require_role("admin", "editor"))):
     db = request.app.state.db

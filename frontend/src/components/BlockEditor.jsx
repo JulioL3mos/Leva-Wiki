@@ -1,4 +1,5 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import api, { API_BASE } from "../lib/api";
 import {
   Heading1,
   Heading2,
@@ -12,6 +13,8 @@ import {
   Plus,
   Trash2,
   GripVertical,
+  Image as ImageIcon,
+  Upload,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +32,7 @@ const TYPES = [
   { type: "numbered", label: "Lista numerada", icon: ListOrdered, placeholder: "Item numerado" },
   { type: "quote", label: "Citação", icon: Quote, placeholder: "Citação…" },
   { type: "code", label: "Código", icon: Code, placeholder: "Trecho de código" },
+  { type: "image", label: "Imagem", icon: ImageIcon, placeholder: "" },
   { type: "divider", label: "Divisor", icon: Minus, placeholder: "" },
 ];
 
@@ -51,6 +55,71 @@ function blockClass(type) {
     default:
       return "text-base text-slate-700 leading-relaxed outline-none w-full";
   }
+}
+
+function ImageBlock({ b, updateBlock }) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const { data } = await api.post("/wiki/images/upload", formData);
+      updateBlock(b.id, { content: data.url, meta: { ...b.meta, filename: file.name } });
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Falha no upload da imagem");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (b.content) {
+    const imageUrl = b.content.startsWith("http") ? b.content : `${API_BASE.replace("/api", "")}${b.content}`;
+    return (
+      <div className="relative group/img w-full my-4">
+        <img src={imageUrl} alt="" className="rounded-lg border border-slate-200 max-h-[500px] w-auto" />
+        <button 
+          onClick={() => updateBlock(b.id, { content: "" })}
+          className="absolute top-2 left-2 p-1.5 bg-white/90 shadow-sm rounded-md opacity-0 group-hover/img:opacity-100 transition text-slate-500 hover:text-red-600"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full my-2">
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+        className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-slate-200 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition text-slate-500"
+      >
+        {uploading ? (
+          <span className="flex items-center gap-2"><Upload className="w-5 h-5 animate-bounce" /> Enviando…</span>
+        ) : (
+          <>
+            <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+            <span className="text-sm font-medium">Clique para fazer upload de um print ou imagem</span>
+          </>
+        )}
+      </button>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+    </div>
+  );
 }
 
 export default function BlockEditor({ blocks, onChange }) {
@@ -106,6 +175,14 @@ export default function BlockEditor({ blocks, onChange }) {
             <div key={b.id} className="group flex items-center gap-2 py-2" data-testid={`block-${b.type}`}>
               <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} />
               <hr className="flex-1 border-slate-200" />
+            </div>
+          );
+        }
+        if (b.type === "image") {
+          return (
+            <div key={b.id} className="group flex items-start gap-2" data-testid={`block-${b.type}`}>
+              <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} />
+              <ImageBlock b={b} updateBlock={updateBlock} />
             </div>
           );
         }
@@ -190,6 +267,10 @@ export function renderBlocks(blocks) {
     if (b.type === "h3") return <h3 key={b.id} className="text-xl font-display font-semibold tracking-tight mt-6 mb-2">{b.content}</h3>;
     if (b.type === "quote") return <blockquote key={b.id} className="border-l-4 border-slate-900 pl-4 italic text-slate-600 my-4 text-lg">{b.content}</blockquote>;
     if (b.type === "code") return <pre key={b.id} className="font-mono text-sm bg-slate-50 border border-slate-200 rounded-md p-4 my-4 whitespace-pre-wrap text-slate-800">{b.content}</pre>;
+    if (b.type === "image") {
+      const imageUrl = b.content.startsWith("http") ? b.content : `${API_BASE.replace("/api", "")}${b.content}`;
+      return <img key={b.id} src={imageUrl} alt={b.meta?.filename || ""} className="rounded-lg border border-slate-200 my-6 max-h-[600px] w-auto" />;
+    }
     if (b.type === "bulleted") return <li key={b.id} className="ml-6 list-disc text-slate-700 leading-relaxed">{b.content}</li>;
     if (b.type === "numbered") return <li key={b.id} className="ml-6 list-decimal text-slate-700 leading-relaxed">{b.content}</li>;
     return <p key={b.id} className="text-slate-700 leading-relaxed my-3">{b.content}</p>;

@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Any
-from fastapi import APIRouter, HTTPException, Request, Depends, Query
+from fastapi import APIRouter, HTTPException, Request, Depends, Query, File, UploadFile
 from pydantic import BaseModel, Field
 
 from auth import get_current_user, require_role
+from storage_client import put_object, APP_NAME
 
 router = APIRouter(tags=["wiki"])
 
@@ -253,6 +254,38 @@ async def list_tags(request: Request, user: dict = Depends(get_current_user)):
     ]
     rows = [{"name": r["_id"], "count": r["count"]} async for r in db.articles.aggregate(pipeline)]
     return rows
+
+
+# ---------- Images for Editor ----------
+
+@router.post("/wiki/images/upload")
+async def upload_wiki_image(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user)
+):
+    if user["role"] not in ("admin", "editor"):
+        raise HTTPException(status_code=403, detail="Apenas editores podem fazer upload de imagens")
+    
+    ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/jpg", "application/octet-stream"}
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        print(f"DEBUG ERROR: Tipo de arquivo rejeitado: {file.content_type}")
+        raise HTTPException(status_code=400, detail=f"Tipo de imagem não permitido: {file.content_type}")
+    
+    data = await file.read()
+    ext = (file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "png").lower()
+    file_id = str(uuid.uuid4())
+    # Organizando na subpasta 'articles'
+    path = f"{APP_NAME}/articles/{file_id}.{ext}"
+    
+    try:
+        result = put_object(path, data, file.content_type)
+        # Retornamos a URL absoluta para evitar problemas de caminho no frontend
+        url = f"/api/files/raw/{result['path']}"
+        print(f"DEBUG: Upload de imagem concluído. URL gerada: {url}")
+        return {"url": url, "id": file_id}
+    except Exception as e:
+        print(f"DEBUG ERROR: Falha no upload: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Falha no upload da imagem: {e}")
 
 
 # ---------- Dashboard / Stats ----------

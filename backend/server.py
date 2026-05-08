@@ -2,7 +2,11 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+env_path = ROOT_DIR / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    load_dotenv() # Fallback to current dir
 
 import os
 import logging
@@ -20,11 +24,27 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL')
+db_name = os.environ.get('DB_NAME')
+
+if not mongo_url or not db_name:
+    logger.error(f"Erro: Variáveis de ambiente faltando. MONGO_URL: {bool(mongo_url)}, DB_NAME: {bool(db_name)}")
+    logger.error(f"Procurando arquivo .env em: {env_path.absolute()}")
+    raise KeyError("As variáveis MONGO_URL e DB_NAME devem estar no arquivo .env")
+
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[db_name]
 
 app = FastAPI(title="Portal LEVA API")
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Portal LEVA - Backend Ativo",
+        "api_root": "/api",
+        "docs": "/docs",
+        "status": "online"
+    }
 
 # Make db available to routers via app state
 app.state.db = db
@@ -77,11 +97,17 @@ async def on_startup():
     await seed_admin(db)
     try:
         init_storage()
-        logger.info("Storage initialized")
+        logger.info("Storage initialized successfully")
     except Exception as e:
-        logger.error(f"Storage init failed: {e}")
+        logger.warning(f"Storage not initialized (Optional): {e}")
+        logger.info("The system will work, but file uploads might be disabled.")
 
 
 @app.on_event("shutdown")
 async def on_shutdown():
     client.close()
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

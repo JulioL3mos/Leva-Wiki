@@ -42,7 +42,7 @@ async def upload_file(
     
     ALLOWED_TYPES = {
         "application/pdf",
-        "image/jpeg", "image/png", "image/webp", "image/gif", "image/jpg",
+        "image/jpeg", "image/png", "image/webp", "image/gif", "image/jpg","image/avif","image/jfif"
         "video/mp4", "video/quicktime", "video/x-msvideo",
         "text/plain", "text/csv",
         "application/msword",

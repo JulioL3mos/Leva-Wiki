@@ -87,6 +87,11 @@ class LoginReq(BaseModel):
     password: str
 
 
+class PasswordChangeReq(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=6)
+
+
 # ---------- Auth dependency ----------
 
 async def get_current_user(request: Request) -> dict:
@@ -206,6 +211,22 @@ async def logout(response: Response):
 @router.get("/me")
 async def me(user: dict = Depends(get_current_user)):
     return user
+
+
+@router.post("/change-password")
+async def change_password(req: PasswordChangeReq, request: Request, user: dict = Depends(get_current_user)):
+    db = request.app.state.db
+    # Buscar usuário com o hash da senha
+    full_user = await db.users.find_one({"id": user["id"]})
+    if not verify_password(req.current_password, full_user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Senha atual incorreta")
+    
+    new_hash = hash_password(req.new_password)
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"password_hash": new_hash}}
+    )
+    return {"message": "Senha alterada com sucesso"}
 
 
 @router.post("/refresh")

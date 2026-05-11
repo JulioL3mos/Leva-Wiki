@@ -73,3 +73,6 @@ O projeto é dividido em duas partes principais:
 - **Upload Local:** Removida dependência de nuvem (Emergent Storage). Arquivos agora ficam em `backend/uploads`.
 - **Imagens no Editor:** Adicionado suporte para inserir prints e fotos diretamente no corpo dos artigos da Wiki.
 - **Limpeza de Dependências:** Removidas bibliotecas incompatíveis com Python 3.14 (numpy/pandas) que não eram utilizadas.
+- **Troca de Senha:** Implementada funcionalidade de alteração de senha no perfil do usuário e reset de senha por administradores no painel de gestão.
+- **Filtros de Categoria:** O menu lateral agora funciona como um filtro dinâmico que atualiza a lista de artigos em tempo real.
+- **Personalização Visual:** Título da aba do navegador e metadados atualizados para "Portal LEVA".

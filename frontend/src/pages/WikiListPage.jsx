@@ -18,6 +18,12 @@ export default function WikiListPage() {
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Sync category state with URL params
+  useEffect(() => {
+    const cat = params.get("category") || "";
+    setCategory(cat);
+  }, [params]);
+
   useEffect(() => {
     api.get("/wiki/categories").then((r) => setCategories(r.data));
     api.get("/wiki/tags").then((r) => setTags(r.data));
@@ -33,9 +39,13 @@ export default function WikiListPage() {
       setArticles(r.data);
       setLoading(false);
     });
-    if (category) setParams({ category });
+  }, [q, category, tag]);
+
+  // Update URL when category changes
+  const updateCategory = (newCat) => {
+    if (newCat) setParams({ category: newCat });
     else setParams({});
-  }, [q, category, tag, setParams]);
+  };
 
   return (
     <div className="px-6 lg:px-10 py-10 max-w-[1400px] mx-auto">
@@ -60,9 +70,9 @@ export default function WikiListPage() {
 
       {/* Category chips */}
       <div className="mt-5 flex flex-wrap gap-2">
-        <Chip active={!category} onClick={() => setCategory("")}>Todas</Chip>
+        <Chip active={!category} onClick={() => updateCategory("")}>Todas</Chip>
         {categories.map((c) => (
-          <Chip key={c.id || c.name} active={category === c.name} onClick={() => setCategory(c.name)}>
+          <Chip key={c.id || c.name} active={category === c.name} onClick={() => updateCategory(c.name)}>
             {c.name} <span className="opacity-50 ml-1">{c.article_count}</span>
           </Chip>
         ))}

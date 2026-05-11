@@ -10,13 +10,26 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Check, X, Shield, ExternalLink } from "lucide-react";
+import { Check, X, Shield, ExternalLink, KeyRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "../components/ui/dialog";
+import { Label } from "../components/ui/label";
+import { Input } from "../components/ui/input";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [pending, setPending] = useState([]);
+  const [resetPass, setResetPass] = useState({ userId: "", userName: "", newPassword: "" });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const loadAll = async () => {
     const [u, p] = await Promise.all([
@@ -47,6 +60,23 @@ export default function AdminPage() {
     await api.post(`/admin/articles/${id}/reject`);
     toast.success("Artigo rejeitado");
     loadAll();
+  };
+
+  const resetPassword = async () => {
+    if (resetPass.newPassword.length < 6) {
+      return toast.error("A senha deve ter pelo menos 6 caracteres");
+    }
+    setResetLoading(true);
+    try {
+      await api.patch(`/admin/users/${resetPass.userId}`, { password: resetPass.newPassword });
+      toast.success(`Senha de ${resetPass.userName} alterada!`);
+      setDialogOpen(false);
+      setResetPass({ userId: "", userName: "", newPassword: "" });
+    } catch (err) {
+      toast.error("Erro ao resetar senha");
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -116,11 +146,51 @@ export default function AdminPage() {
                 <div className="text-xs text-slate-400 font-mono w-28 text-right">
                   {new Date(u.created_at).toLocaleDateString("pt-BR")}
                 </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-slate-400 hover:text-slate-900"
+                  onClick={() => {
+                    setResetPass({ userId: u.id, userName: u.name, newPassword: "" });
+                    setDialogOpen(true);
+                  }}
+                >
+                  <KeyRound className="w-4 h-4" />
+                </Button>
               </div>
             ))}
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resetar Senha</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-slate-500">
+              Alterando a senha para o usuário: <strong className="text-slate-900">{resetPass.userName}</strong>
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="admin-new-pass">Nova Senha</Label>
+              <Input
+                id="admin-new-pass"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={resetPass.newPassword}
+                onChange={(e) => setResetPass({ ...resetPass, newPassword: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={resetPassword} disabled={resetLoading}>
+              {resetLoading ? "Salvando..." : "Confirmar Nova Senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

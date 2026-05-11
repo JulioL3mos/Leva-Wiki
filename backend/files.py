@@ -39,14 +39,30 @@ async def upload_file(
 ):
     if user["role"] not in ("admin", "editor"):
         raise HTTPException(status_code=403, detail="Apenas editores podem fazer upload")
+    
+    ALLOWED_TYPES = {
+        "application/pdf",
+        "image/jpeg", "image/png", "image/webp", "image/gif", "image/jpg",
+        "video/mp4", "video/quicktime", "video/x-msvideo",
+        "text/plain", "text/csv",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/octet-stream", # Adicionado para suportar arquivos genéricos do Windows
+    }
     if file.content_type not in ALLOWED_TYPES:
+        print(f"DEBUG ERROR: Tipo de arquivo rejeitado na biblioteca: {file.content_type}")
         raise HTTPException(status_code=400, detail=f"Tipo não permitido: {file.content_type}")
     data = await file.read()
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="Arquivo muito grande (máx 200MB)")
     ext = (file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "bin").lower()
     file_id = str(uuid.uuid4())
-    path = f"{APP_NAME}/uploads/{user['id']}/{file_id}.{ext}"
+    # Organizar na subpasta 'library' para diferenciar das imagens dos artigos
+    path = f"{APP_NAME}/library/{file_id}.{ext}"
     try:
         result = put_object(path, data, file.content_type or "application/octet-stream")
     except Exception as e:

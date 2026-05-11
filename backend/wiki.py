@@ -147,10 +147,16 @@ async def get_article(article_id: str, request: Request, user: dict = Depends(ge
         raise HTTPException(status_code=404, detail="Artigo não encontrado")
     if doc.get("status") != "published" and user["role"] not in ("admin", "editor") and doc.get("author_id") != user["id"]:
         raise HTTPException(status_code=403, detail="forbidden")
-    # Increment view count
-    await db.articles.update_one({"id": article_id}, {"$inc": {"view_count": 1}})
-    doc["view_count"] = doc.get("view_count", 0) + 1
     return doc
+
+
+@router.post("/wiki/articles/{article_id}/view")
+async def increment_article_view(article_id: str, request: Request, user: dict = Depends(get_current_user)):
+    db = request.app.state.db
+    res = await db.articles.update_one({"id": article_id}, {"$inc": {"view_count": 1}})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Artigo não encontrado")
+    return {"ok": True}
 
 
 @router.patch("/wiki/articles/{article_id}")

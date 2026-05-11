@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../lib/api";
 import { renderBlocks } from "../components/BlockEditor";
@@ -15,9 +15,17 @@ export default function ArticleViewPage() {
   const [article, setArticle] = useState(null);
   const [versions, setVersions] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
+  const viewedRef = useRef(false);
 
   useEffect(() => {
+    // Fetch article data
     api.get(`/wiki/articles/${id}`).then((r) => setArticle(r.data)).catch(() => setArticle(false));
+
+    // Increment view count only once per mount
+    if (!viewedRef.current) {
+      api.post(`/wiki/articles/${id}/view`).catch(console.error);
+      viewedRef.current = true;
+    }
   }, [id]);
 
   const loadVersions = async () => {

@@ -76,3 +76,4 @@ O projeto é dividido em duas partes principais:
 - **Troca de Senha:** Implementada funcionalidade de alteração de senha no perfil do usuário e reset de senha por administradores no painel de gestão.
 - **Filtros de Categoria:** O menu lateral agora funciona como um filtro dinâmico que atualiza a lista de artigos em tempo real.
 - **Personalização Visual:** Título da aba do navegador atualizado para "Portal LEVA" e remoção de selos/badges externos ("Made with Emergent").
+- **Contador de Visualizações:** Corrigida duplicidade na contagem de acessos, agora subindo de 1 em 1 através de uma rota dedicada (`POST /view`).

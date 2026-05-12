@@ -77,3 +77,31 @@ O projeto é dividido em duas partes principais:
 - **Filtros de Categoria:** O menu lateral agora funciona como um filtro dinâmico que atualiza a lista de artigos em tempo real.
 - **Personalização Visual:** Título da aba do navegador atualizado para "Portal LEVA" e remoção de selos/badges externos ("Made with Emergent").
 - **Contador de Visualizações:** Corrigida duplicidade na contagem de acessos, agora subindo de 1 em 1 através de uma rota dedicada (`POST /view`).
+
+---
+
+## 🔍 Auditoria de Dependências Externas (Emergent)
+
+Para garantir a total autonomia do sistema, identificamos os seguintes pontos que ainda fazem referência a serviços externos da "Emergent". **Estes itens devem ser alterados antes da migração definitiva para o servidor da empresa:**
+
+### 1. Imagem de Fundo do Login
+- **Arquivo:** `frontend/src/pages/LoginPage.jsx`
+- **Referência:** `BG_IMG` aponta para `https://static.prod-images.emergentagent.com/...`
+- **Recomendação:** Baixar a imagem e salvá-la localmente na pasta `frontend/public/assets/`.
+
+### 2. Scripts e Badges no HTML
+- **Arquivo:** `frontend/public/index.html`
+- **Referências:**
+    - `<script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>`
+    - Script de inicialização do `posthog` (telemetria).
+- **Recomendação:** Remover os scripts se não houver intenção de usar telemetria externa.
+
+### 3. Dependências de Desenvolvimento (npm/yarn)
+- **Arquivo:** `frontend/package.json`
+- **Referência:** `@emergentbase/visual-edits` aponta para uma URL externa.
+- **Recomendação:** Verificar se esta biblioteca é essencial para o funcionamento (geralmente é usada apenas para edição visual em tempo real pela IA).
+
+### 4. Configuração de Git
+- **Arquivo:** `.gitconfig`
+- **Referência:** Email e nome de usuário apontam para `emergent.sh`.
+- **Recomendação:** Rodar `git config user.email "seu-email@empresa.com"` para atualizar o histórico de commits.

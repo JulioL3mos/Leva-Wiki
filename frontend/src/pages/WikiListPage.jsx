@@ -50,9 +50,9 @@ export default function WikiListPage() {
   return (
     <div className="px-6 lg:px-10 py-10 max-w-[1400px] mx-auto">
       <div>
-        <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold">Base de conhecimento</div>
-        <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tighter text-slate-900 mt-2">Wiki Corporativa</h1>
-        <p className="text-slate-500 mt-2">{articles.length} artigos {category && `em ${category}`}</p>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Base de conhecimento</div>
+        <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tighter text-foreground mt-2">Wiki Corporativa</h1>
+        <p className="text-muted-foreground mt-2">{articles.length} artigos {category && `em ${category}`}</p>
       </div>
 
       <div className="mt-8 flex flex-col md:flex-row gap-3">
@@ -95,10 +95,10 @@ export default function WikiListPage() {
           <div key={i} className="surface p-5 h-44 animate-pulse" />
         ))}
         {!loading && articles.length === 0 && (
-          <div className="col-span-full surface p-10 text-center text-slate-500">
+          <div className="col-span-full surface p-10 text-center text-muted-foreground">
             Nenhum artigo encontrado.{" "}
             {(user?.role === "admin" || user?.role === "editor") && (
-              <Link to="/wiki/novo" className="text-slate-900 underline">Criar o primeiro</Link>
+              <Link to="/wiki/novo" className="text-foreground underline hover:text-primary">Criar o primeiro</Link>
             )}
           </div>
         )}
@@ -109,22 +109,22 @@ export default function WikiListPage() {
             className="surface p-5 flex flex-col hover:-translate-y-1 hover:shadow-sm transition-soft group"
             data-testid={`article-card-${a.id}`}
           >
-            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-semibold flex items-center gap-1.5">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold flex items-center gap-1.5">
               <BookOpen className="w-3 h-3" />
               {a.category}
             </div>
-            <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 mt-2 line-clamp-2 group-hover:text-slate-700">
+            <h3 className="font-display font-bold text-lg tracking-tight text-foreground mt-2 line-clamp-2 group-hover:text-primary/80">
               {a.title}
             </h3>
             {a.summary && (
-              <p className="text-sm text-slate-600 mt-2 line-clamp-3 leading-relaxed">{a.summary}</p>
+              <p className="text-sm text-muted-foreground mt-2 line-clamp-3 leading-relaxed">{a.summary}</p>
             )}
             <div className="flex flex-wrap gap-1 mt-3">
               {(a.tags || []).slice(0, 4).map((t) => (
-                <Badge key={t} variant="secondary" className="text-[10px] font-mono bg-slate-100 text-slate-600 hover:bg-slate-200">#{t}</Badge>
+                <Badge key={t} variant="secondary" className="text-[10px] font-mono bg-muted text-muted-foreground hover:bg-muted/80">#{t}</Badge>
               ))}
             </div>
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500">
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {new Date(a.updated_at).toLocaleDateString("pt-BR")}
@@ -148,8 +148,8 @@ function Chip({ children, active, onClick, small }) {
       onClick={onClick}
       className={`${small ? "text-xs px-2.5 py-1" : "text-sm px-3 py-1.5"} rounded-full border transition ${
         active
-          ? "bg-slate-900 text-white border-slate-900"
-          : "bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+          ? "bg-primary text-primary-foreground border-primary"
+          : "bg-background border-border text-muted-foreground hover:border-slate-300 dark:hover:border-slate-600 hover:bg-muted"
       }`}
       data-testid={`chip-${typeof children === "string" ? children : "filter"}`}
     >

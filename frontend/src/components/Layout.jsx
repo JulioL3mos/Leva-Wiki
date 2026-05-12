@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import CommandPalette from "./CommandPalette";
+import ThemeToggle from "./ThemeToggle";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -64,32 +65,32 @@ export default function Layout({ categories = [] }) {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen flex bg-white text-slate-900">
+    <div className="min-h-screen flex bg-background text-foreground transition-colors duration-300">
       {/* Sidebar */}
       <aside
-        className="hidden md:flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white sticky top-0 h-screen"
+        className="hidden md:flex w-64 shrink-0 flex-col border-r border-border bg-card sticky top-0 h-screen transition-colors duration-300"
         data-testid="app-sidebar"
       >
         <div className="px-5 pt-6 pb-4">
           <Link to="/" className="flex items-center gap-2.5 group" data-testid="sidebar-logo">
-            <div className="w-8 h-8 rounded-md bg-slate-900 flex items-center justify-center text-white font-display font-black tracking-tighter">
+            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-display font-black tracking-tighter">
               L
             </div>
             <div>
-              <div className="font-display font-bold text-slate-900 leading-none tracking-tight">Portal LEVA</div>
-              <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mt-1">Conhecimento</div>
+              <div className="font-display font-bold text-foreground leading-none tracking-tight">Portal LEVA</div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">Conhecimento</div>
             </div>
           </Link>
         </div>
 
         <button
           onClick={() => setPaletteOpen(true)}
-          className="mx-3 flex items-center gap-2 px-3 py-2 rounded-md border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition text-sm text-slate-500"
+          className="mx-3 flex items-center gap-2 px-3 py-2 rounded-md border border-input hover:border-slate-300 dark:hover:border-slate-600 hover:bg-muted transition text-sm text-muted-foreground"
           data-testid="sidebar-search-trigger"
         >
           <Search className="w-4 h-4" />
           <span>Buscar…</span>
-          <kbd className="ml-auto text-[10px] font-mono text-slate-400 border border-slate-200 rounded px-1.5 py-0.5">⌘K</kbd>
+          <kbd className="ml-auto text-[10px] font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">⌘K</kbd>
         </button>
 
         <nav className="px-3 mt-5 space-y-0.5">
@@ -102,8 +103,8 @@ export default function Layout({ categories = [] }) {
               className={({ isActive }) =>
                 `flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition ${
                   isActive
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`
               }
             >
@@ -118,8 +119,8 @@ export default function Layout({ categories = [] }) {
               className={({ isActive }) =>
                 `flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition ${
                   isActive
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`
               }
             >
@@ -129,7 +130,7 @@ export default function Layout({ categories = [] }) {
           )}
         </nav>
 
-        <div className="px-5 pt-6 pb-2 text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
+        <div className="px-5 pt-6 pb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">
           Categorias
         </div>
         <div className="px-3 space-y-0.5 overflow-y-auto flex-1 pb-4">
@@ -139,54 +140,57 @@ export default function Layout({ categories = [] }) {
               <Link
                 key={c.id || c.name}
                 to={`/wiki?category=${encodeURIComponent(c.name)}`}
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition group"
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition group"
                 data-testid={`nav-cat-${c.name}`}
               >
-                <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-700" strokeWidth={1.75} />
+                <Icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground" strokeWidth={1.75} />
                 <span className="truncate">{c.name}</span>
                 {typeof c.article_count === "number" && c.article_count > 0 && (
-                  <span className="ml-auto text-[10px] text-slate-400 font-mono">{c.article_count}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground font-mono">{c.article_count}</span>
                 )}
               </Link>
             );
           })}
         </div>
 
-        <div className="px-3 pb-4 border-t border-slate-100 pt-3">
+        <div className="px-3 pb-4 border-t border-border pt-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-slate-50 transition text-left"
+                className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-muted transition text-left"
                 data-testid="user-menu-trigger"
               >
-                <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-semibold">
+                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{user?.name}</div>
-                  <div className="text-[11px] text-slate-500 truncate uppercase tracking-wider">{user?.role}</div>
+                  <div className="text-sm font-medium truncate text-foreground">{user?.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate uppercase tracking-wider">{user?.role}</div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-popover text-popover-foreground border-border">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{user?.name}</span>
-                  <span className="text-xs text-slate-500">{user?.email}</span>
+                  <span className="text-xs text-muted-foreground">{user?.email}</span>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/perfil")} data-testid="menu-profile">
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem onClick={() => navigate("/perfil")} data-testid="menu-profile" className="hover:bg-muted cursor-pointer">
                 <Settings className="w-4 h-4 mr-2" /> Perfil
               </DropdownMenuItem>
               {user?.role === "admin" && (
-                <DropdownMenuItem onClick={() => navigate("/admin")} data-testid="menu-admin">
+                <DropdownMenuItem onClick={() => navigate("/admin")} data-testid="menu-admin" className="hover:bg-muted cursor-pointer">
                   <Users className="w-4 h-4 mr-2" /> Administração
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} data-testid="menu-logout" className="text-red-600 focus:text-red-700">
+              
+              <ThemeToggle />
+
+              <DropdownMenuSeparator className="bg-border" />
+              <DropdownMenuItem onClick={logout} data-testid="menu-logout" className="text-red-600 focus:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 cursor-pointer">
                 <LogOut className="w-4 h-4 mr-2" /> Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -195,29 +199,29 @@ export default function Layout({ categories = [] }) {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col bg-background">
         {/* Topbar */}
-        <header className="sticky top-0 z-20 backdrop-blur-xl bg-white/75 border-b border-slate-200/70 px-6 py-3 flex items-center gap-3">
+        <header className="sticky top-0 z-20 backdrop-blur-xl bg-background/75 border-b border-border px-6 py-3 flex items-center gap-3 transition-colors duration-300">
           <button
             onClick={() => setPaletteOpen(true)}
-            className="md:hidden flex items-center justify-center w-9 h-9 rounded-md border border-slate-200 hover:bg-slate-50"
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-md border border-input hover:bg-muted"
             data-testid="topbar-search"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-4 h-4 text-foreground" />
           </button>
           <div className="flex-1" />
           {(user?.role === "admin" || user?.role === "editor") && (
             <Button
               size="sm"
               onClick={() => navigate("/wiki/novo")}
-              className="bg-slate-900 hover:bg-slate-800 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
               data-testid="topbar-new-article"
             >
               <Plus className="w-4 h-4 mr-1.5" /> Novo artigo
             </Button>
           )}
         </header>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-auto">
           <Outlet />
         </div>
       </main>

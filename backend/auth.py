@@ -92,6 +92,11 @@ class PasswordChangeReq(BaseModel):
     new_password: str = Field(min_length=6)
 
 
+class UserUpdateReq(BaseModel):
+    name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
 # ---------- Auth dependency ----------
 
 async def get_current_user(request: Request) -> dict:
@@ -227,6 +232,23 @@ async def change_password(req: PasswordChangeReq, request: Request, user: dict =
         {"$set": {"password_hash": new_hash}}
     )
     return {"message": "Senha alterada com sucesso"}
+
+
+@router.patch("/update-profile")
+async def update_profile(req: UserUpdateReq, request: Request, user: dict = Depends(get_current_user)):
+    db = request.app.state.db
+    update_data = {}
+    if req.name is not None:
+        update_data["name"] = req.name.strip()
+    if req.avatar_url is not None:
+        update_data["avatar_url"] = req.avatar_url
+
+    if not update_data:
+        return user
+
+    await db.users.update_one({"id": user["id"]}, {"$set": update_data})
+    updated_user = await db.users.find_one({"id": user["id"]}, {"_id": 0, "password_hash": 0})
+    return updated_user
 
 
 @router.post("/refresh")

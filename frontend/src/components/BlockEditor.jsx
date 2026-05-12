@@ -43,17 +43,17 @@ function uid() {
 function blockClass(type) {
   switch (type) {
     case "h1":
-      return "text-4xl font-display font-black tracking-tighter text-slate-900 outline-none w-full";
+      return "text-4xl font-display font-black tracking-tighter text-foreground outline-none w-full";
     case "h2":
-      return "text-2xl font-display font-bold tracking-tight text-slate-900 outline-none w-full";
+      return "text-2xl font-display font-bold tracking-tight text-foreground outline-none w-full";
     case "h3":
-      return "text-xl font-display font-semibold tracking-tight text-slate-900 outline-none w-full";
+      return "text-xl font-display font-semibold tracking-tight text-foreground outline-none w-full";
     case "quote":
-      return "text-lg italic text-slate-600 border-l-4 border-slate-900 pl-4 outline-none w-full";
+      return "text-lg italic text-muted-foreground border-l-4 border-primary pl-4 outline-none w-full";
     case "code":
-      return "font-mono text-sm bg-slate-50 border border-slate-200 rounded-md p-3 text-slate-800 outline-none w-full whitespace-pre-wrap";
+      return "font-mono text-sm bg-muted border border-border rounded-md p-3 text-foreground outline-none w-full whitespace-pre-wrap";
     default:
-      return "text-base text-slate-700 leading-relaxed outline-none w-full";
+      return "text-base text-foreground leading-relaxed outline-none w-full";
   }
 }
 
@@ -84,10 +84,10 @@ function ImageBlock({ b, updateBlock }) {
     const imageUrl = b.content.startsWith("http") ? b.content : `${API_BASE.replace("/api", "")}${b.content}`;
     return (
       <div className="relative group/img w-full my-4">
-        <img src={imageUrl} alt="" className="rounded-lg border border-slate-200 max-h-[500px] w-auto" />
+        <img src={imageUrl} alt="" className="rounded-lg border border-border max-h-[500px] w-auto" />
         <button 
           onClick={() => updateBlock(b.id, { content: "" })}
-          className="absolute top-2 left-2 p-1.5 bg-white/90 shadow-sm rounded-md opacity-0 group-hover/img:opacity-100 transition text-slate-500 hover:text-red-600"
+          className="absolute top-2 left-2 p-1.5 bg-background/90 shadow-sm rounded-md opacity-0 group-hover/img:opacity-100 transition text-muted-foreground hover:text-destructive"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -100,7 +100,7 @@ function ImageBlock({ b, updateBlock }) {
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
-        className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-slate-200 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition text-slate-500"
+        className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground hover:bg-muted transition text-muted-foreground"
       >
         {uploading ? (
           <span className="flex items-center gap-2"><Upload className="w-5 h-5 animate-bounce" /> Enviando…</span>
@@ -174,7 +174,7 @@ export default function BlockEditor({ blocks, onChange }) {
           return (
             <div key={b.id} className="group flex items-center gap-2 py-2" data-testid={`block-${b.type}`}>
               <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} />
-              <hr className="flex-1 border-slate-200" />
+              <hr className="flex-1 border-border" />
             </div>
           );
         }
@@ -189,8 +189,8 @@ export default function BlockEditor({ blocks, onChange }) {
         return (
           <div key={b.id} className="group flex items-start gap-2" data-testid={`block-${b.type}`}>
             <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} />
-            {b.type === "bulleted" && <span className="mt-2 text-slate-400">•</span>}
-            {b.type === "numbered" && <span className="mt-2 text-slate-400 font-mono text-sm">{idx + 1}.</span>}
+            {b.type === "bulleted" && <span className="mt-2 text-muted-foreground">•</span>}
+            {b.type === "numbered" && <span className="mt-2 text-muted-foreground font-mono text-sm">{idx + 1}.</span>}
             {b.type === "code" ? (
               <textarea
                 ref={(el) => (refs.current[b.id] = el)}

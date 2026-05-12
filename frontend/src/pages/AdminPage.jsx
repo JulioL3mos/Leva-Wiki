@@ -81,32 +81,32 @@ export default function AdminPage() {
 
   return (
     <div className="px-6 lg:px-10 py-10 max-w-[1400px] mx-auto" data-testid="admin-page">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold flex items-center gap-2">
+      <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold flex items-center gap-2">
         <Shield className="w-3 h-3" /> Administração
       </div>
-      <h1 className="text-4xl font-display font-black tracking-tighter text-slate-900 mt-2">Painel administrativo</h1>
-      <p className="text-slate-500 mt-2">Gerencie usuários, permissões e aprove conteúdo enviado por editores.</p>
+      <h1 className="text-4xl font-display font-black tracking-tighter text-foreground mt-2">Painel administrativo</h1>
+      <p className="text-muted-foreground mt-2">Gerencie usuários, permissões e aprove conteúdo enviado por editores.</p>
 
       <Tabs defaultValue="approvals" className="mt-8">
         <TabsList>
           <TabsTrigger value="approvals" data-testid="admin-tab-approvals">
-            Aprovações <Badge variant="secondary" className="ml-2 bg-slate-100">{pending.length}</Badge>
+            Aprovações <Badge variant="secondary" className="ml-2 bg-muted">{pending.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="users" data-testid="admin-tab-users">Usuários ({users.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="approvals" className="mt-6">
           {pending.length === 0 ? (
-            <div className="surface p-10 text-center text-slate-400">Nenhuma aprovação pendente.</div>
+            <div className="surface p-10 text-center text-muted-foreground">Nenhuma aprovação pendente.</div>
           ) : (
-            <div className="surface divide-y divide-slate-100">
+            <div className="surface divide-y divide-border">
               {pending.map((a) => (
                 <div key={a.id} className="p-5 flex items-center gap-4">
                   <div className="flex-1 min-w-0">
-                    <Link to={`/wiki/${a.id}`} className="font-medium text-slate-900 hover:text-slate-700 truncate flex items-center gap-2">
-                      {a.title} <ExternalLink className="w-3 h-3 text-slate-400" />
+                    <Link to={`/wiki/${a.id}`} className="font-medium text-foreground hover:text-primary truncate flex items-center gap-2">
+                      {a.title} <ExternalLink className="w-3 h-3 text-muted-foreground" />
                     </Link>
-                    <div className="text-xs text-slate-500 mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       Por {a.author_name} · {a.category} · {new Date(a.updated_at).toLocaleString("pt-BR")}
                     </div>
                   </div>
@@ -123,15 +123,15 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
-          <div className="surface divide-y divide-slate-100">
+          <div className="surface divide-y divide-border">
             {users.map((u) => (
               <div key={u.id} className="p-4 flex items-center gap-4" data-testid={`user-row-${u.id}`}>
-                <div className="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
                   {(u.name || "?").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-900 truncate">{u.name}</div>
-                  <div className="text-xs text-slate-500 truncate">{u.email}</div>
+                  <div className="text-sm font-medium text-foreground truncate">{u.name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                 </div>
                 <Select value={u.role} onValueChange={(v) => updateRole(u.id, v)}>
                   <SelectTrigger className="w-32" data-testid={`role-select-${u.id}`}>
@@ -143,13 +143,13 @@ export default function AdminPage() {
                     <SelectItem value="viewer">Viewer</SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="text-xs text-slate-400 font-mono w-28 text-right">
+                <div className="text-xs text-muted-foreground font-mono w-28 text-right">
                   {new Date(u.created_at).toLocaleDateString("pt-BR")}
                 </div>
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 text-slate-400 hover:text-slate-900"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onClick={() => {
                     setResetPass({ userId: u.id, userName: u.name, newPassword: "" });
                     setDialogOpen(true);
@@ -169,8 +169,8 @@ export default function AdminPage() {
             <DialogTitle>Resetar Senha</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <p className="text-sm text-slate-500">
-              Alterando a senha para o usuário: <strong className="text-slate-900">{resetPass.userName}</strong>
+            <p className="text-sm text-muted-foreground">
+              Alterando a senha para o usuário: <strong className="text-foreground">{resetPass.userName}</strong>
             </p>
             <div className="space-y-2">
               <Label htmlFor="admin-new-pass">Nova Senha</Label>

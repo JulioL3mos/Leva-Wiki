@@ -88,7 +88,7 @@ export default function ArticleEditorPage() {
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="text-sm text-slate-500 hover:text-slate-900 inline-flex items-center gap-1.5"
+          className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5"
           data-testid="editor-back"
         >
           <ArrowLeft className="w-4 h-4" /> Voltar
@@ -101,7 +101,7 @@ export default function ArticleEditorPage() {
             size="sm"
             onClick={() => save("published")}
             disabled={saving}
-            className="bg-slate-900 hover:bg-slate-800 text-white"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
             data-testid="publish-article"
           >
             <Send className="w-4 h-4 mr-1.5" />
@@ -110,7 +110,7 @@ export default function ArticleEditorPage() {
         </div>
       </div>
 
-      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold flex items-center gap-1.5">
+      <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold flex items-center gap-1.5">
         <FileText className="w-3 h-3" /> {isNew ? "Novo artigo" : "Editar artigo"}
       </div>
 
@@ -119,7 +119,7 @@ export default function ArticleEditorPage() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Título do artigo…"
-          className="text-3xl font-display font-black tracking-tighter h-auto py-3 border-0 border-b border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-slate-900 px-0"
+          className="text-3xl font-display font-black tracking-tighter h-auto py-3 border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 bg-transparent"
           data-testid="editor-title"
         />
 
@@ -128,13 +128,13 @@ export default function ArticleEditorPage() {
           onChange={(e) => setSummary(e.target.value)}
           placeholder="Resumo curto (aparece nas listagens)…"
           rows={2}
-          className="border-0 border-b border-slate-200 rounded-none focus-visible:ring-0 focus-visible:border-slate-900 px-0 resize-none"
+          className="border-0 border-b border-border rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 resize-none bg-transparent"
           data-testid="editor-summary"
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="cat" className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-semibold">Categoria</Label>
+            <Label htmlFor="cat" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Categoria</Label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="mt-2" data-testid="editor-category">
                 <SelectValue />
@@ -147,7 +147,7 @@ export default function ArticleEditorPage() {
             </Select>
           </div>
           <div>
-            <Label htmlFor="tags" className="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-semibold">Tags (separadas por vírgula)</Label>
+            <Label htmlFor="tags" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Tags (separadas por vírgula)</Label>
             <Input
               id="tags"
               value={tagsInput}
@@ -160,10 +160,10 @@ export default function ArticleEditorPage() {
         </div>
 
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</div>
+          <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-md px-3 py-2">{error}</div>
         )}
 
-        <div className="pt-4 border-t border-slate-200">
+        <div className="pt-4 border-t border-border">
           <BlockEditor blocks={blocks} onChange={setBlocks} />
         </div>
       </div>

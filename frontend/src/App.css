@@ -2,13 +2,17 @@
 
 .prose-leva {
     font-family: 'IBM Plex Sans', system-ui, sans-serif;
-    color: #334155;
+    color: hsl(var(--foreground) / 0.85);
     font-size: 1.0625rem;
     line-height: 1.75;
 }
 .prose-leva h1, .prose-leva h2, .prose-leva h3 {
     font-family: 'Manrope', system-ui, sans-serif;
-    color: #0f172a;
+    color: hsl(var(--foreground));
 }
-.prose-leva a { color: #2563eb; text-decoration: underline; }
+.prose-leva a { color: hsl(var(--primary)); text-decoration: underline; }
 .prose-leva ul, .prose-leva ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+
+.dark .prose-leva {
+    color: hsl(var(--foreground) / 0.8);
+}

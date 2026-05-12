@@ -40,7 +40,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-white">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       {/* Left visual */}
       <div className="hidden lg:flex relative overflow-hidden bg-slate-900">
         <img
@@ -84,17 +84,17 @@ export default function LoginPage() {
       <div className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-md bg-slate-900 text-white flex items-center justify-center font-display font-black tracking-tighter">
+            <div className="w-9 h-9 rounded-md bg-primary text-primary-foreground flex items-center justify-center font-display font-black tracking-tighter">
               L
             </div>
-            <div className="font-display font-bold">Portal LEVA</div>
+            <div className="font-display font-bold text-foreground">Portal LEVA</div>
           </div>
 
-          <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold mb-2">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-2">
             <Lock className="inline w-3 h-3 mr-1.5 -mt-0.5" /> Acesso interno
           </div>
-          <h2 className="text-3xl font-display font-bold tracking-tight text-slate-900 mb-1">Bem-vindo de volta</h2>
-          <p className="text-slate-500 text-sm mb-8">Entre para acessar a base de conhecimento.</p>
+          <h2 className="text-3xl font-display font-bold tracking-tight text-foreground mb-1">Bem-vindo de volta</h2>
+          <p className="text-muted-foreground text-sm mb-8">Entre para acessar a base de conhecimento.</p>
 
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="grid grid-cols-2 w-full mb-6">
@@ -113,6 +113,7 @@ export default function LoginPage() {
                     placeholder="Como devemos te chamar?"
                     required={tab === "register"}
                     data-testid="input-name"
+                    className="bg-muted/50"
                   />
                 </div>
               </TabsContent>
@@ -127,6 +128,7 @@ export default function LoginPage() {
                   placeholder="voce@empresa.com"
                   required
                   data-testid="input-email"
+                  className="bg-muted/50"
                 />
               </div>
 
@@ -140,18 +142,19 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   data-testid="input-password"
+                  className="bg-muted/50"
                 />
               </div>
 
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2" data-testid="auth-error">
+                <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-md px-3 py-2" data-testid="auth-error">
                   {error}
                 </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white h-11 font-semibold"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-semibold transition-all duration-300 active:scale-[0.98]"
                 disabled={submitting}
                 data-testid="submit-auth"
               >
@@ -160,8 +163,8 @@ export default function LoginPage() {
               </Button>
 
               {tab === "login" && (
-                <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-md p-3 mt-4">
-                  <div className="font-semibold text-slate-700 mb-1">Conta de demonstração</div>
+                <div className="text-xs text-muted-foreground bg-muted border border-border rounded-md p-3 mt-4">
+                  <div className="font-semibold text-foreground/80 mb-1">Conta de demonstração</div>
                   <div className="font-mono">admin@levaportal.com / admin123</div>
                 </div>
               )}

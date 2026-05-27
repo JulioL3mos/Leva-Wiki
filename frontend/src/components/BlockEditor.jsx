@@ -1,5 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import api, { API_BASE } from "../lib/api";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import ReactMarkdown from "react-markdown";
 import {
   Heading1,
   Heading2,
@@ -160,6 +162,18 @@ export default function BlockEditor({ blocks, onChange }) {
     }
   };
 
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const sourceIdx = result.source.index;
+    const destIdx = result.destination.index;
+    if (sourceIdx === destIdx) return;
+    
+    const newBlocks = Array.from(blocks);
+    const [moved] = newBlocks.splice(sourceIdx, 1);
+    newBlocks.splice(destIdx, 0, moved);
+    onChange(newBlocks);
+  };
+
   useEffect(() => {
     if (!blocks || blocks.length === 0) {
       onChange([{ id: uid(), type: "paragraph", content: "", meta: {} }]);
@@ -168,59 +182,83 @@ export default function BlockEditor({ blocks, onChange }) {
 
   return (
     <div className="block-editor space-y-1.5" data-testid="block-editor">
-      {blocks.map((b, idx) => {
-        const meta = TYPES.find((t) => t.type === b.type) || TYPES[0];
-        if (b.type === "divider") {
-          return (
-            <div key={b.id} className="group flex items-center gap-2 py-2" data-testid={`block-${b.type}`}>
-              <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} />
-              <hr className="flex-1 border-border" />
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="blocks">
+          {(provided) => (
+            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1.5">
+              {blocks.map((b, idx) => {
+                const meta = TYPES.find((t) => t.type === b.type) || TYPES[0];
+                return (
+                  <Draggable key={b.id} draggableId={b.id} index={idx}>
+                    {(provided) => {
+                      const handleProps = provided.dragHandleProps;
+                      
+                      let contentNode;
+                      if (b.type === "divider") {
+                        contentNode = (
+                          <div className="group flex items-center gap-2 py-2" data-testid={`block-${b.type}`}>
+                            <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} dragHandleProps={handleProps} />
+                            <hr className="flex-1 border-border" />
+                          </div>
+                        );
+                      } else if (b.type === "image") {
+                        contentNode = (
+                          <div className="group flex items-start gap-2" data-testid={`block-${b.type}`}>
+                            <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} dragHandleProps={handleProps} />
+                            <ImageBlock b={b} updateBlock={updateBlock} />
+                          </div>
+                        );
+                      } else {
+                        contentNode = (
+                          <div className="group flex items-start gap-2" data-testid={`block-${b.type}`}>
+                            <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} dragHandleProps={handleProps} />
+                            {b.type === "bulleted" && <span className="mt-2 text-muted-foreground">•</span>}
+                            {b.type === "numbered" && <span className="mt-2 text-muted-foreground font-mono text-sm">{idx + 1}.</span>}
+                            {b.type === "code" ? (
+                              <textarea
+                                ref={(el) => (refs.current[b.id] = el)}
+                                value={b.content}
+                                onChange={(e) => updateBlock(b.id, { content: e.target.value })}
+                                placeholder={meta.placeholder}
+                                rows={Math.max(3, b.content.split("\n").length)}
+                                className={blockClass(b.type)}
+                                data-testid={`block-input-${b.id}`}
+                              />
+                            ) : (
+                              <input
+                                ref={(el) => (refs.current[b.id] = el)}
+                                type="text"
+                                value={b.content}
+                                onChange={(e) => updateBlock(b.id, { content: e.target.value })}
+                                onKeyDown={(e) => handleKeyDown(e, b, idx)}
+                                placeholder={meta.placeholder}
+                                className={blockClass(b.type)}
+                                data-testid={`block-input-${b.id}`}
+                              />
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div ref={provided.innerRef} {...provided.draggableProps} className="relative">
+                          {contentNode}
+                        </div>
+                      );
+                    }}
+                  </Draggable>
+                );
+              })}
+              {provided.placeholder}
             </div>
-          );
-        }
-        if (b.type === "image") {
-          return (
-            <div key={b.id} className="group flex items-start gap-2" data-testid={`block-${b.type}`}>
-              <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} />
-              <ImageBlock b={b} updateBlock={updateBlock} />
-            </div>
-          );
-        }
-        return (
-          <div key={b.id} className="group flex items-start gap-2" data-testid={`block-${b.type}`}>
-            <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} />
-            {b.type === "bulleted" && <span className="mt-2 text-muted-foreground">•</span>}
-            {b.type === "numbered" && <span className="mt-2 text-muted-foreground font-mono text-sm">{idx + 1}.</span>}
-            {b.type === "code" ? (
-              <textarea
-                ref={(el) => (refs.current[b.id] = el)}
-                value={b.content}
-                onChange={(e) => updateBlock(b.id, { content: e.target.value })}
-                placeholder={meta.placeholder}
-                rows={Math.max(3, b.content.split("\n").length)}
-                className={blockClass(b.type)}
-                data-testid={`block-input-${b.id}`}
-              />
-            ) : (
-              <input
-                ref={(el) => (refs.current[b.id] = el)}
-                type="text"
-                value={b.content}
-                onChange={(e) => updateBlock(b.id, { content: e.target.value })}
-                onKeyDown={(e) => handleKeyDown(e, b, idx)}
-                placeholder={meta.placeholder}
-                className={blockClass(b.type)}
-                data-testid={`block-input-${b.id}`}
-              />
-            )}
-          </div>
-        );
-      })}
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 }
 
-function BlockHandle({ b, insertBlock, removeBlock, updateBlock }) {
+function BlockHandle({ b, insertBlock, removeBlock, updateBlock, dragHandleProps }) {
   return (
     <div className="flex items-center opacity-0 group-hover:opacity-100 transition shrink-0 pt-1.5">
       <DropdownMenu>
@@ -239,7 +277,7 @@ function BlockHandle({ b, insertBlock, removeBlock, updateBlock }) {
       </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="p-0.5 hover:bg-slate-100 rounded text-slate-400" data-testid={`block-handle-${b.id}`}>
+          <button className="p-0.5 hover:bg-slate-100 rounded text-slate-400" data-testid={`block-handle-${b.id}`} {...dragHandleProps}>
             <GripVertical className="w-4 h-4" />
           </button>
         </DropdownMenuTrigger>
@@ -259,20 +297,33 @@ function BlockHandle({ b, insertBlock, removeBlock, updateBlock }) {
   );
 }
 
+const MarkdownContent = ({ content, tag: Tag, className, id }) => {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ node, ...props }) => <Tag id={id} className={className} {...props} />,
+        a: ({ node, ...props }) => <a className="text-primary underline underline-offset-4 decoration-primary/30 hover:decoration-primary transition-colors" target="_blank" rel="noopener noreferrer" {...props} />
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+};
+
 export function renderBlocks(blocks) {
   return blocks?.map((b, idx) => {
     if (b.type === "divider") return <hr key={b.id} className="my-6 border-slate-200" />;
-    if (b.type === "h1") return <h1 key={b.id} className="text-4xl font-display font-black tracking-tighter mt-10 mb-4">{b.content}</h1>;
-    if (b.type === "h2") return <h2 key={b.id} className="text-2xl font-display font-bold tracking-tight mt-8 mb-3">{b.content}</h2>;
-    if (b.type === "h3") return <h3 key={b.id} className="text-xl font-display font-semibold tracking-tight mt-6 mb-2">{b.content}</h3>;
-    if (b.type === "quote") return <blockquote key={b.id} className="border-l-4 border-slate-900 pl-4 italic text-slate-600 my-4 text-lg">{b.content}</blockquote>;
+    if (b.type === "h1") return <MarkdownContent key={b.id} id={`block-${b.id}`} tag="h1" className="text-4xl font-display font-black tracking-tighter mt-10 mb-4" content={b.content} />;
+    if (b.type === "h2") return <MarkdownContent key={b.id} id={`block-${b.id}`} tag="h2" className="text-2xl font-display font-bold tracking-tight mt-8 mb-3" content={b.content} />;
+    if (b.type === "h3") return <MarkdownContent key={b.id} id={`block-${b.id}`} tag="h3" className="text-xl font-display font-semibold tracking-tight mt-6 mb-2" content={b.content} />;
+    if (b.type === "quote") return <blockquote key={b.id} className="border-l-4 border-slate-900 pl-4 italic text-slate-600 my-4 text-lg"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></blockquote>;
     if (b.type === "code") return <pre key={b.id} className="font-mono text-sm bg-slate-50 border border-slate-200 rounded-md p-4 my-4 whitespace-pre-wrap text-slate-800">{b.content}</pre>;
     if (b.type === "image") {
       const imageUrl = b.content.startsWith("http") ? b.content : `${API_BASE.replace("/api", "")}${b.content}`;
       return <img key={b.id} src={imageUrl} alt={b.meta?.filename || ""} className="rounded-lg border border-slate-200 my-6 max-h-[600px] w-auto" />;
     }
-    if (b.type === "bulleted") return <li key={b.id} className="ml-6 list-disc text-slate-700 leading-relaxed">{b.content}</li>;
-    if (b.type === "numbered") return <li key={b.id} className="ml-6 list-decimal text-slate-700 leading-relaxed">{b.content}</li>;
-    return <p key={b.id} className="text-slate-700 leading-relaxed my-3">{b.content}</p>;
+    if (b.type === "bulleted") return <li key={b.id} className="ml-6 list-disc text-slate-700 leading-relaxed"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>;
+    if (b.type === "numbered") return <li key={b.id} className="ml-6 list-decimal text-slate-700 leading-relaxed"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>;
+    return <MarkdownContent key={b.id} tag="p" className="text-slate-700 leading-relaxed my-3" content={b.content} />;
   });
 }

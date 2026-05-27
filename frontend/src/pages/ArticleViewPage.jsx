@@ -102,9 +102,39 @@ export default function ArticleViewPage() {
         )}
       </div>
 
-      <article className="prose-leva dark:prose-invert mt-10 pb-20">
-        {renderBlocks(article.blocks)}
-      </article>
+      {(() => {
+        const headings = article.blocks?.filter(b => b.type === 'h1' || b.type === 'h2' || b.type === 'h3') || [];
+        return (
+          <div className="flex flex-col lg:flex-row gap-10 mt-10 pb-20 items-start">
+            <article className="prose-leva dark:prose-invert flex-1 min-w-0 w-full">
+              {renderBlocks(article.blocks)}
+            </article>
+
+            {headings.length > 0 && (
+              <aside className="hidden lg:block w-64 shrink-0 sticky top-8">
+                <div className="bg-muted/30 p-5 rounded-xl border border-border">
+                  <h4 className="font-display font-semibold tracking-tight mb-4 text-xs uppercase tracking-wider text-muted-foreground">Nesta página</h4>
+                  <nav className="flex flex-col gap-3 text-sm">
+                    {headings.map(h => (
+                      <a 
+                        key={h.id} 
+                        href={`#block-${h.id}`} 
+                        className={`text-muted-foreground hover:text-primary transition-colors line-clamp-2 ${h.type === 'h2' ? 'ml-3' : h.type === 'h3' ? 'ml-6 text-xs' : 'font-medium text-foreground'}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          document.getElementById(`block-${h.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                      >
+                        {h.content}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              </aside>
+            )}
+          </div>
+        );
+      })()}
 
       {showVersions && (
         <div className="surface p-6 mt-10">

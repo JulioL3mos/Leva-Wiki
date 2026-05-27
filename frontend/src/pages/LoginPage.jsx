@@ -8,8 +8,7 @@ import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { ArrowRight, Lock } from "lucide-react";
 
-const BG_IMG =
-  "https://static.prod-images.emergentagent.com/jobs/959f7354-92fb-4001-9efa-447a14795da2/images/03500dc57bf3eb1339ac600c02b3a2a865758769dc1749db53105d2bd03e8f51.png";
+const BG_IMG = "/assets/login-bg.png";
 
 export default function LoginPage() {
   const { user, login, register, loading } = useAuth();

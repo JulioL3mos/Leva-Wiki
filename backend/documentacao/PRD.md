@@ -62,12 +62,6 @@ Plataforma corporativa interna de gestão de conhecimento ("Portal LEVA") para u
 - Export de artigos em PDF
 - Comentários e reações em artigos
 
-### P3 (futuro)
-- Microsoft Entra ID SSO
-- Empacotamento Docker Compose para deploy on-prem (conforme spec original)
-- Migração para PostgreSQL/Prisma se a empresa optar pela stack original
-- Multi-tenant por bandeira (Renault/Geely/Bajaj com isolamento)
-
 ## Decisões arquiteturais relevantes
 - **MongoDB com `id` (uuid) ao invés de `_id`**: simplifica serialização JSON e evita vazamento de ObjectId. Todas as queries excluem `_id`.
 - **Cookies httpOnly em vez de localStorage**: protege contra XSS. Refresh token de 7 dias + access token de 8h (UX corporativa).
@@ -78,6 +72,14 @@ Plataforma corporativa interna de gestão de conhecimento ("Portal LEVA") para u
 
 ## Credenciais de teste
 - Admin: `admin@levaportal.com` / `admin123`
+- Editor: `editor@levaportal.com` / `editor123`
+
+## Como rodar
+- Backend hot-reload via supervisor (`sudo supervisorctl restart backend`)
+- Frontend hot-reload (yarn já em execução pelo supervisor)
+- Logs: `/var/log/supervisor/backend.*.log`
+- DB: MongoDB local em `mongodb://localhost:27017`, db `test_database`
+n@levaportal.com` / `admin123`
 - Editor: `editor@levaportal.com` / `editor123`
 
 ## Como rodar

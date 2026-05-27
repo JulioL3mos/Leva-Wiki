@@ -54,14 +54,27 @@ O projeto é dividido em duas partes principais:
 
 ## 📦 Como Rodar (Localmente na Empresa)
 
-### Backend
+A forma recomendada para implantação no servidor da empresa é utilizando **Docker** e **Docker Compose**, o que garante um ambiente isolado e pronto para produção (utilizando Nginx para o Frontend e Uvicorn para o Backend).
+
+### 🐳 Via Docker Compose (Recomendado para o Servidor)
+1. Certifique-se de ter o [Docker](https://docs.docker.com/get-docker/) e o Docker Compose instalados no servidor.
+2. No diretório raiz do projeto, execute o comando:
+   ```bash
+   docker-compose up -d --build
+   ```
+3. O sistema estará disponível em `http://localhost` (na porta 80).
+4. O banco de dados, a API e o site rodarão em containers separados, com volumes persistentes para que você não perca os arquivos/uploads ou dados da wiki ao reiniciar o servidor.
+
+### 💻 Desenvolvimento Local (Sem Docker)
+
+#### Backend
 1. Ter o MongoDB rodando em `localhost:27017`.
 2. Criar e ativar o ambiente virtual: `python -m venv venv` -> `.\venv\Scripts\activate`.
 3. Instalar dependências: `pip install -r backend/requirements.txt`.
 4. Criar `.env` baseado no `.env.example`.
 5. Rodar: `python backend/server.py`.
 
-### Frontend
+#### Frontend
 1. Ter o Node.js v24+ instalado.
 2. Instalar dependências: `yarn install` (recomendado) ou `npm install --legacy-peer-deps`.
 3. Criar `.env` baseado no `.env.example`.

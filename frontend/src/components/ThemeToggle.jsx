@@ -14,15 +14,18 @@ export default function ThemeToggle() {
 
   return (
     <button
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="relative flex items-center justify-between w-full px-2 py-1.5 rounded-sm text-sm font-medium transition-colors hover:bg-muted outline-none group"
+      onClick={(e) => {
+        e.preventDefault();
+        setTheme(isDark ? "light" : "dark");
+      }}
+      className="relative flex cursor-pointer select-none items-center justify-between w-full rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-muted focus:bg-muted group"
       aria-label="Alternar tema"
     >
-      <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground">
+      <div className="flex items-center gap-2">
         {isDark ? (
-          <Moon className="w-4 h-4 text-blue-400 fill-blue-400/20" />
+          <Moon className="w-4 h-4 mr-2 text-blue-400 fill-blue-400/20" />
         ) : (
-          <Sun className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+          <Sun className="w-4 h-4 mr-2 text-amber-500 fill-amber-500/20" />
         )}
         <span>Modo {isDark ? "Escuro" : "Claro"}</span>
       </div>

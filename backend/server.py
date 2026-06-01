@@ -19,6 +19,7 @@ from wiki import router as wiki_router, create_indexes as create_wiki_indexes
 from files import router as files_router
 from users_admin import router as users_router
 from storage_client import init_storage
+from training import router as training_router, create_indexes as create_training_indexes
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -67,6 +68,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(wiki_router, prefix="/api")
 app.include_router(files_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
+app.include_router(training_router, prefix="/api")
 
 # CORS — allow frontend origin with credentials
 frontend_url = os.environ.get("FRONTEND_URL", "*")
@@ -94,6 +96,7 @@ else:
 async def on_startup():
     await create_auth_indexes(db)
     await create_wiki_indexes(db)
+    await create_training_indexes(db)
     await seed_admin(db)
     try:
         init_storage()

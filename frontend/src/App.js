@@ -13,6 +13,8 @@ import ArticleEditorPage from "./pages/ArticleEditorPage";
 import AdminPage from "./pages/AdminPage";
 import FilesPage from "./pages/FilesPage";
 import ProfilePage from "./pages/ProfilePage";
+import TrainingDashboard from "./pages/TrainingDashboard";
+import CourseView from "./pages/CourseView";
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
               <Route path="/wiki/:id" element={<ArticleViewPage />} />
               <Route path="/wiki/:id/editar" element={<ProtectedRoute roles={["admin", "editor"]}><ArticleEditorPage /></ProtectedRoute>} />
               <Route path="/biblioteca" element={<FilesPage />} />
+              <Route path="/academia" element={<TrainingDashboard />} />
+              <Route path="/academia/:id" element={<CourseView />} />
               <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><AdminPage /></ProtectedRoute>} />
               <Route path="/perfil" element={<ProfilePage />} />
             </Route>

@@ -13,6 +13,7 @@ import { Badge } from "../components/ui/badge";
 import { Check, X, Shield, ExternalLink, KeyRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import AdminTraining from "./AdminTraining";
 import {
   Dialog,
   DialogContent,
@@ -93,6 +94,7 @@ export default function AdminPage() {
             Aprovações <Badge variant="secondary" className="ml-2 bg-muted">{pending.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="users" data-testid="admin-tab-users">Usuários ({users.length})</TabsTrigger>
+          <TabsTrigger value="training" data-testid="admin-tab-training">Treinamentos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="approvals" className="mt-6">
@@ -160,6 +162,10 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        </TabsContent>
+
+        <TabsContent value="training" className="mt-6">
+          <AdminTraining />
         </TabsContent>
       </Tabs>
 

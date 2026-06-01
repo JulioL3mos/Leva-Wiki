@@ -39,6 +39,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/wiki", label: "Wiki", icon: BookOpen },
   { to: "/biblioteca", label: "Biblioteca", icon: FolderOpen },
+  { to: "/academia", label: "Academia", icon: GraduationCap },
 ];
 
 export default function Layout({ categories = [] }) {

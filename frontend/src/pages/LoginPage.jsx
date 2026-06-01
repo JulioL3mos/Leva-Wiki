@@ -8,7 +8,7 @@ import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { ArrowRight, Lock } from "lucide-react";
 
-const BG_IMG = "/assets/loginBandeiras.png";
+const BG_IMG = "/assets/login-bg.png";
 
 export default function LoginPage() {
   const { user, login, register, loading } = useAuth();
@@ -182,3 +182,4 @@ function BadgeBrand({ label }) {
     </div>
   );
 }
+

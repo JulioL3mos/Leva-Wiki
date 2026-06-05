@@ -126,6 +126,7 @@ function ImageBlock({ b, updateBlock }) {
 
 export default function BlockEditor({ blocks, onChange }) {
   const refs = useRef({});
+  const [slashMenu, setSlashMenu] = useState(null);
 
   const updateBlock = (id, patch) => {
     onChange(blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)));
@@ -153,12 +154,27 @@ export default function BlockEditor({ blocks, onChange }) {
   const handleKeyDown = (e, b, idx) => {
     if (e.key === "Enter" && !e.shiftKey && b.type !== "code") {
       e.preventDefault();
+      // If there's a slash menu open, and they press enter, we should ideally pick the first option or ignore.
+      // But let's just close it.
+      if (slashMenu?.blockId === b.id) setSlashMenu(null);
       insertBlock(b.id, "paragraph");
     } else if (e.key === "Backspace" && (b.content || "") === "") {
       e.preventDefault();
       const prev = blocks[idx - 1];
       removeBlock(b.id);
       if (prev) setTimeout(() => refs.current[prev.id]?.focus(), 10);
+    } else if (e.key === "Escape" && slashMenu?.blockId === b.id) {
+      setSlashMenu(null);
+    }
+  };
+
+  const handleInput = (e, b) => {
+    const val = e.target.value;
+    updateBlock(b.id, { content: val });
+    if (val === "/") {
+      setSlashMenu({ blockId: b.id });
+    } else if (slashMenu?.blockId === b.id) {
+      setSlashMenu(null);
     }
   };
 
@@ -218,7 +234,7 @@ export default function BlockEditor({ blocks, onChange }) {
                               <textarea
                                 ref={(el) => (refs.current[b.id] = el)}
                                 value={b.content}
-                                onChange={(e) => updateBlock(b.id, { content: e.target.value })}
+                                onChange={(e) => handleInput(e, b)}
                                 placeholder={meta.placeholder}
                                 rows={Math.max(3, b.content.split("\n").length)}
                                 className={blockClass(b.type)}
@@ -229,12 +245,32 @@ export default function BlockEditor({ blocks, onChange }) {
                                 ref={(el) => (refs.current[b.id] = el)}
                                 type="text"
                                 value={b.content}
-                                onChange={(e) => updateBlock(b.id, { content: e.target.value })}
+                                onChange={(e) => handleInput(e, b)}
                                 onKeyDown={(e) => handleKeyDown(e, b, idx)}
                                 placeholder={meta.placeholder}
                                 className={blockClass(b.type)}
                                 data-testid={`block-input-${b.id}`}
                               />
+                            )}
+                            {slashMenu?.blockId === b.id && (
+                              <div className="absolute left-8 top-full mt-1 w-64 bg-background border border-border shadow-lg rounded-md overflow-hidden z-50">
+                                <div className="px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest bg-muted/50">Transformar em...</div>
+                                <div className="max-h-64 overflow-y-auto p-1">
+                                  {TYPES.map((t) => (
+                                    <button
+                                      key={t.type}
+                                      onClick={() => {
+                                        updateBlock(b.id, { type: t.type, content: "" });
+                                        setSlashMenu(null);
+                                        setTimeout(() => refs.current[b.id]?.focus(), 10);
+                                      }}
+                                      className="w-full text-left px-2 py-1.5 text-sm flex items-center rounded-sm hover:bg-muted focus:bg-muted outline-none transition-colors"
+                                    >
+                                      <t.icon className="w-4 h-4 mr-2 text-muted-foreground" /> {t.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
                             )}
                           </div>
                         );

@@ -5,19 +5,16 @@ import { formatApiErrorDetail } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { ArrowRight, Lock } from "lucide-react";
 
 const BG_IMG = "/assets/login-bg.png";
 
 export default function LoginPage() {
-  const { user, login, register, loading } = useAuth();
+  const { user, login, loading } = useAuth();
   const [email, setEmail] = useState("admin@levaportal.com");
   const [password, setPassword] = useState("admin123");
-  const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [tab, setTab] = useState("login");
 
   if (!loading && user) return <Navigate to="/" replace />;
 
@@ -26,11 +23,7 @@ export default function LoginPage() {
     setError("");
     setSubmitting(true);
     try {
-      if (tab === "login") {
-        await login(email, password);
-      } else {
-        await register(email, password, name);
-      }
+      await login(email, password);
     } catch (e) {
       setError(formatApiErrorDetail(e.response?.data?.detail) || e.message);
     } finally {
@@ -95,80 +88,56 @@ export default function LoginPage() {
           <h2 className="text-3xl font-display font-bold tracking-tight text-foreground mb-1">Bem-vindo de volta</h2>
           <p className="text-muted-foreground text-sm mb-8">Entre para acessar a base de conhecimento.</p>
 
-          <Tabs value={tab} onValueChange={setTab}>
-            <TabsList className="grid grid-cols-2 w-full mb-6">
-              <TabsTrigger value="login" data-testid="tab-login">Entrar</TabsTrigger>
-              <TabsTrigger value="register" data-testid="tab-register">Cadastrar</TabsTrigger>
-            </TabsList>
+          <form onSubmit={submit} className="space-y-4" data-testid="auth-form">
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mail corporativo</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@empresa.com"
+                required
+                data-testid="input-email"
+                className="bg-muted/50"
+              />
+            </div>
 
-            <form onSubmit={submit} className="space-y-4" data-testid="auth-form">
-              <TabsContent value="register" className="m-0">
-                <div className="space-y-2 mb-4">
-                  <Label htmlFor="name">Nome completo</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Como devemos te chamar?"
-                    required={tab === "register"}
-                    data-testid="input-name"
-                    className="bg-muted/50"
-                  />
-                </div>
-              </TabsContent>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                data-testid="input-password"
+                className="bg-muted/50"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail corporativo</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="voce@empresa.com"
-                  required
-                  data-testid="input-email"
-                  className="bg-muted/50"
-                />
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-md px-3 py-2" data-testid="auth-error">
+                {error}
               </div>
+            )}
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  data-testid="input-password"
-                  className="bg-muted/50"
-                />
-              </div>
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-semibold transition-all duration-300 active:scale-[0.98]"
+              disabled={submitting}
+              data-testid="submit-auth"
+            >
+              {submitting ? "Aguarde…" : "Entrar"}
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
 
-              {error && (
-                <div className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-md px-3 py-2" data-testid="auth-error">
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-semibold transition-all duration-300 active:scale-[0.98]"
-                disabled={submitting}
-                data-testid="submit-auth"
-              >
-                {submitting ? "Aguarde…" : tab === "login" ? "Entrar" : "Criar conta"}
-                <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
-
-              {tab === "login" && (
-                <div className="text-xs text-muted-foreground bg-muted border border-border rounded-md p-3 mt-4">
-                  <div className="font-semibold text-foreground/80 mb-1">Conta de demonstração</div>
-                  <div className="font-mono">admin@levaportal.com / admin123</div>
-                </div>
-              )}
-            </form>
-          </Tabs>
+            <div className="text-xs text-muted-foreground bg-muted border border-border rounded-md p-3 mt-4">
+              <div className="font-semibold text-foreground/80 mb-1">Conta de demonstração</div>
+              <div className="font-mono">admin@levaportal.com / admin123</div>
+            </div>
+          </form>
         </div>
       </div>
     </div>

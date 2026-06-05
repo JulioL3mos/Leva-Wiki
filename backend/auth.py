@@ -1,6 +1,7 @@
 import os
 import uuid
 import bcrypt
+# pyrefly: ignore [missing-import]
 import jwt
 import secrets
 from datetime import datetime, timezone, timedelta
@@ -80,6 +81,7 @@ class RegisterReq(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
     name: str = Field(min_length=1)
+    role: Optional[str] = "viewer"  # admin can set role on creation
 
 
 class LoginReq(BaseModel):
@@ -128,7 +130,7 @@ def require_role(*roles: str):
             raise HTTPException(status_code=403, detail="Insufficient permissions")
         return user
     return dep
-
+    
 
 # ---------- Brute force ----------
 
@@ -161,26 +163,25 @@ async def clear_attempts(db, identifier: str):
 # ---------- Endpoints ----------
 
 @router.post("/register")
-async def register(req: RegisterReq, request: Request, response: Response):
+async def register(req: RegisterReq, request: Request, response: Response, user: dict = Depends(require_role("admin"))):
     db = request.app.state.db
     email = req.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email já cadastrado")
+    allowed_roles = ("admin", "editor", "viewer")
+    role = req.role if req.role in allowed_roles else "viewer"
     user_doc = {
         "id": str(uuid.uuid4()),
         "email": email,
         "name": req.name.strip(),
         "password_hash": hash_password(req.password),
-        "role": "viewer",  # default; admin can promote
+        "role": role,
         "avatar_url": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "is_active": True,
     }
     await db.users.insert_one(user_doc)
-    access = create_access_token(user_doc["id"], user_doc["email"], user_doc["role"])
-    refresh = create_refresh_token(user_doc["id"])
-    set_auth_cookies(response, access, refresh)
     public = {k: v for k, v in user_doc.items() if k not in ("password_hash", "_id")}
     return public
 

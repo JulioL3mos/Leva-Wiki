@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Check, X, Shield, ExternalLink, KeyRound } from "lucide-react";
+import { Check, X, Shield, ExternalLink, KeyRound, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import AdminTraining from "./AdminTraining";
@@ -31,6 +31,9 @@ export default function AdminPage() {
   const [resetPass, setResetPass] = useState({ userId: "", userName: "", newPassword: "" });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [newUserDialog, setNewUserDialog] = useState(false);
+  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "viewer" });
+  const [newUserLoading, setNewUserLoading] = useState(false);
 
   const loadAll = async () => {
     const [u, p] = await Promise.all([
@@ -80,6 +83,24 @@ export default function AdminPage() {
     }
   };
 
+  const createUser = async () => {
+    if (!newUser.name.trim() || !newUser.email.trim() || newUser.password.length < 6) {
+      return toast.error("Preencha todos os campos (senha mínima: 6 caracteres)");
+    }
+    setNewUserLoading(true);
+    try {
+      await api.post("/auth/register", newUser);
+      toast.success(`Usuário ${newUser.name} criado com sucesso!`);
+      setNewUserDialog(false);
+      setNewUser({ name: "", email: "", password: "", role: "viewer" });
+      loadAll();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erro ao criar usuário");
+    } finally {
+      setNewUserLoading(false);
+    }
+  };
+
   return (
     <div className="px-6 lg:px-10 py-10 max-w-[1400px] mx-auto" data-testid="admin-page">
       <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold flex items-center gap-2">
@@ -125,6 +146,11 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setNewUserDialog(true)} className="gap-1.5">
+              <UserPlus className="w-4 h-4" /> Novo Usuário
+            </Button>
+          </div>
           <div className="surface divide-y divide-border">
             {users.map((u) => (
               <div key={u.id} className="p-4 flex items-center gap-4" data-testid={`user-row-${u.id}`}>
@@ -193,6 +219,65 @@ export default function AdminPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={resetPassword} disabled={resetLoading}>
               {resetLoading ? "Salvando..." : "Confirmar Nova Senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New User Dialog */}
+      <Dialog open={newUserDialog} onOpenChange={setNewUserDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-user-name">Nome completo</Label>
+              <Input
+                id="new-user-name"
+                placeholder="Nome do colaborador"
+                value={newUser.name}
+                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-email">E-mail corporativo</Label>
+              <Input
+                id="new-user-email"
+                type="email"
+                placeholder="colaborador@levaportal.com"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-pass">Senha inicial</Label>
+              <Input
+                id="new-user-pass"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Permissão</Label>
+              <Select value={newUser.role} onValueChange={(v) => setNewUser({ ...newUser, role: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="editor">Editor</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewUserDialog(false)}>Cancelar</Button>
+            <Button onClick={createUser} disabled={newUserLoading}>
+              {newUserLoading ? "Criando..." : "Criar Usuário"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -32,7 +32,7 @@ export default function AdminPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [newUserDialog, setNewUserDialog] = useState(false);
-  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "viewer" });
+  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "viewer", department: "Geral" });
   const [newUserLoading, setNewUserLoading] = useState(false);
 
   const loadAll = async () => {
@@ -51,6 +51,12 @@ export default function AdminPage() {
   const updateRole = async (id, role) => {
     await api.patch(`/admin/users/${id}`, { role });
     toast.success("Permissão atualizada");
+    loadAll();
+  };
+
+  const updateDepartment = async (id, department) => {
+    await api.patch(`/admin/users/${id}`, { department });
+    toast.success("Setor atualizado");
     loadAll();
   };
 
@@ -92,7 +98,7 @@ export default function AdminPage() {
       await api.post("/auth/register", newUser);
       toast.success(`Usuário ${newUser.name} criado com sucesso!`);
       setNewUserDialog(false);
-      setNewUser({ name: "", email: "", password: "", role: "viewer" });
+      setNewUser({ name: "", email: "", password: "", role: "viewer", department: "Geral" });
       loadAll();
     } catch (err) {
       toast.error(err.response?.data?.detail || "Erro ao criar usuário");
@@ -162,13 +168,26 @@ export default function AdminPage() {
                   <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                 </div>
                 <Select value={u.role} onValueChange={(v) => updateRole(u.id, v)}>
-                  <SelectTrigger className="w-32" data-testid={`role-select-${u.id}`}>
+                  <SelectTrigger className="w-28" data-testid={`role-select-${u.id}`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="editor">Editor</SelectItem>
                     <SelectItem value="viewer">Viewer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={u.department || "Geral"} onValueChange={(v) => updateDepartment(u.id, v)}>
+                  <SelectTrigger className="w-32" data-testid={`dept-select-${u.id}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Geral">Geral</SelectItem>
+                    <SelectItem value="TI">TI</SelectItem>
+                    <SelectItem value="Financeiro">Financeiro</SelectItem>
+                    <SelectItem value="Diretoria">Diretoria</SelectItem>
+                    <SelectItem value="Vendas">Vendas</SelectItem>
+                    <SelectItem value="Pós Vendas">Pós Vendas</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="text-xs text-muted-foreground font-mono w-28 text-right">
@@ -270,6 +289,22 @@ export default function AdminPage() {
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="editor">Editor</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Setor</Label>
+              <Select value={newUser.department} onValueChange={(v) => setNewUser({ ...newUser, department: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Geral">Geral</SelectItem>
+                  <SelectItem value="TI">TI</SelectItem>
+                  <SelectItem value="Financeiro">Financeiro</SelectItem>
+                  <SelectItem value="Diretoria">Diretoria</SelectItem>
+                  <SelectItem value="Vendas">Vendas</SelectItem>
+                  <SelectItem value="Pós Vendas">Pós Vendas</SelectItem>
                 </SelectContent>
               </Select>
             </div>

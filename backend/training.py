@@ -14,6 +14,7 @@ class CourseCreate(BaseModel):
     title: str = Field(min_length=1)
     description: str = ""
     target_roles: List[str] = [] 
+    target_departments: List[str] = []
     thumbnail: str = ""
     status: str = "draft"  # draft | published
 
@@ -21,6 +22,7 @@ class CourseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     target_roles: Optional[List[str]] = None
+    target_departments: Optional[List[str]] = None
     thumbnail: Optional[str] = None
     status: Optional[str] = None
 
@@ -70,7 +72,15 @@ async def list_courses(request: Request, user: dict = Depends(get_current_user))
     query = {}
     if user["role"] not in ("admin", "editor"):
         query["status"] = "published"
-        # Check target roles if needed
+        
+    if user["role"] != "admin" and user.get("department") != "Diretoria":
+        user_dept = user.get("department", "Geral")
+        query["$or"] = [
+            {"target_departments": {"$exists": False}},
+            {"target_departments": {"$size": 0}},
+            {"target_departments": "Geral"},
+            {"target_departments": user_dept}
+        ]
     
     cursor = db.courses.find(query, {"_id": 0}).sort("created_at", -1)
     courses = await cursor.to_list(length=100)
@@ -85,6 +95,7 @@ async def create_course(req: CourseCreate, request: Request, user: dict = Depend
         "title": req.title.strip(),
         "description": req.description.strip(),
         "target_roles": req.target_roles,
+        "target_departments": req.target_departments,
         "thumbnail": req.thumbnail,
         "status": req.status,
         "created_at": now_iso(),
@@ -102,6 +113,12 @@ async def get_course(course_id: str, request: Request, user: dict = Depends(get_
     
     if course["status"] != "published" and user["role"] not in ("admin", "editor"):
         raise HTTPException(status_code=403, detail="Acesso negado")
+        
+    if user["role"] != "admin" and user.get("department") != "Diretoria":
+        user_dept = user.get("department", "Geral")
+        target_depts = course.get("target_departments", [])
+        if target_depts and len(target_depts) > 0 and "Geral" not in target_depts and user_dept not in target_depts:
+            raise HTTPException(status_code=403, detail="Sem permissão para visualizar este curso")
     
     # Fetch modules
     cursor = db.modules.find({"course_id": course_id}, {"_id": 0}).sort("order", 1)

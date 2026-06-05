@@ -11,6 +11,7 @@ router = APIRouter(tags=["admin"])
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = None  # admin | editor | viewer
+    department: Optional[str] = None
     is_active: Optional[bool] = None
     password: Optional[str] = None
 

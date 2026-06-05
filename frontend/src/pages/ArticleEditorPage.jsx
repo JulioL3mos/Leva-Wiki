@@ -31,8 +31,17 @@ export default function ArticleEditorPage() {
   const [tagsInput, setTagsInput] = useState("");
   const [blocks, setBlocks] = useState([{ id: uid(), type: "paragraph", content: "", meta: {} }]);
   const [categories, setCategories] = useState([]);
+  const [targetDepartments, setTargetDepartments] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const AVAILABLE_DEPARTMENTS = ["TI", "Financeiro", "Diretoria", "Vendas", "Pós Vendas"];
+
+  const toggleDepartment = (dept) => {
+    setTargetDepartments(prev => 
+      prev.includes(dept) ? prev.filter(d => d !== dept) : [...prev, dept]
+    );
+  };
 
   useEffect(() => {
     api.get("/wiki/categories").then((r) => setCategories(r.data));
@@ -43,6 +52,7 @@ export default function ArticleEditorPage() {
         setSummary(a.summary || "");
         setCategory(a.category);
         setTagsInput((a.tags || []).join(", "));
+        setTargetDepartments(a.target_departments || []);
         setBlocks(a.blocks?.length ? a.blocks : [{ id: uid(), type: "paragraph", content: "", meta: {} }]);
       });
     }
@@ -61,6 +71,7 @@ export default function ArticleEditorPage() {
       summary,
       category,
       tags,
+      target_departments: targetDepartments,
       blocks,
       status,
     };
@@ -156,6 +167,29 @@ export default function ArticleEditorPage() {
               className="mt-2"
               data-testid="editor-tags"
             />
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Setores Permitidos</Label>
+          <div className="text-xs text-muted-foreground mb-2">Se nenhum for selecionado, o conteúdo ficará visível para todos os setores.</div>
+          <div className="flex flex-wrap gap-2">
+            {AVAILABLE_DEPARTMENTS.map((dept) => {
+              const isSelected = targetDepartments.includes(dept);
+              return (
+                <button
+                  key={dept}
+                  onClick={() => toggleDepartment(dept)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    isSelected 
+                      ? "bg-primary text-primary-foreground border-primary" 
+                      : "bg-background text-foreground border-border hover:border-primary/50"
+                  }`}
+                >
+                  {dept}
+                </button>
+              );
+            })}
           </div>
         </div>
 

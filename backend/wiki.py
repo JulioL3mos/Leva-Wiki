@@ -24,6 +24,7 @@ class ArticleCreate(BaseModel):
     summary: Optional[str] = ""
     category: Optional[str] = "Geral"
     tags: List[str] = []
+    target_departments: List[str] = []
     blocks: List[Block] = []
     status: str = "published"  # draft | pending | published
 
@@ -33,6 +34,7 @@ class ArticleUpdate(BaseModel):
     summary: Optional[str] = None
     category: Optional[str] = None
     tags: Optional[List[str]] = None
+    target_departments: Optional[List[str]] = None
     blocks: Optional[List[Block]] = None
     status: Optional[str] = None
 
@@ -74,6 +76,7 @@ async def create_article(req: ArticleCreate, request: Request, user: dict = Depe
         "summary": (req.summary or "").strip(),
         "category": req.category or "Geral",
         "tags": [t.strip() for t in req.tags if t.strip()],
+        "target_departments": req.target_departments,
         "blocks": [b.model_dump() for b in req.blocks],
         "status": status,
         "author_id": user["id"],
@@ -130,6 +133,22 @@ async def list_articles(
             {"summary": {"$regex": q, "$options": "i"}},
             {"tags": {"$regex": q, "$options": "i"}},
         ]
+        
+    if user["role"] != "admin" and user.get("department") != "Diretoria":
+        user_dept = user.get("department", "Geral")
+        visibility_query = {
+            "$or": [
+                {"target_departments": {"$exists": False}},
+                {"target_departments": {"$size": 0}},
+                {"target_departments": "Geral"},
+                {"target_departments": user_dept}
+            ]
+        }
+        if "$or" in query:
+            query["$and"] = [{"$or": query.pop("$or")}, visibility_query]
+        else:
+            query.update(visibility_query)
+
     sort_spec = [("updated_at", -1)]
     if sort == "views":
         sort_spec = [("view_count", -1)]
@@ -147,6 +166,13 @@ async def get_article(article_id: str, request: Request, user: dict = Depends(ge
         raise HTTPException(status_code=404, detail="Artigo não encontrado")
     if doc.get("status") != "published" and user["role"] not in ("admin", "editor") and doc.get("author_id") != user["id"]:
         raise HTTPException(status_code=403, detail="forbidden")
+        
+    if user["role"] != "admin" and user.get("department") != "Diretoria":
+        user_dept = user.get("department", "Geral")
+        target_depts = doc.get("target_departments", [])
+        if target_depts and len(target_depts) > 0 and "Geral" not in target_depts and user_dept not in target_depts:
+            raise HTTPException(status_code=403, detail="Sem permissão para visualizar este conteúdo")
+
     return doc
 
 

@@ -37,7 +37,17 @@ export default function AdminTraining() {
   const [editingQuizId, setEditingQuizId] = useState(null);
 
   // Course form
-  const [courseForm, setCourseForm] = useState({ title: "", description: "", status: "draft" });
+  const [courseForm, setCourseForm] = useState({ title: "", description: "", status: "draft", target_departments: [] });
+
+  const AVAILABLE_DEPARTMENTS = ["TI", "Financeiro", "Diretoria", "Vendas", "Pós Vendas"];
+
+  const toggleCourseDepartment = (dept) => {
+    setCourseForm(prev => {
+      const depts = prev.target_departments || [];
+      const newDepts = depts.includes(dept) ? depts.filter(d => d !== dept) : [...depts, dept];
+      return { ...prev, target_departments: newDepts };
+    });
+  };
 
   // Module form
   const [moduleForm, setModuleForm] = useState({
@@ -80,7 +90,7 @@ export default function AdminTraining() {
   // ---- Course CRUD ----
   const openNewCourse = () => {
     setEditingCourse(null);
-    setCourseForm({ title: "", description: "", status: "draft" });
+    setCourseForm({ title: "", description: "", status: "draft", target_departments: [] });
     setCourseDialog(true);
   };
 
@@ -90,6 +100,7 @@ export default function AdminTraining() {
       title: course.title,
       description: course.description || "",
       status: course.status || "draft",
+      target_departments: course.target_departments || [],
     });
     setCourseDialog(true);
   };
@@ -411,6 +422,28 @@ export default function AdminTraining() {
                 >
                   Publicado
                 </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Setores Permitidos</Label>
+              <div className="text-[10px] text-muted-foreground mb-1">Sem seleção: visível para todos</div>
+              <div className="flex flex-wrap gap-1.5">
+                {AVAILABLE_DEPARTMENTS.map((dept) => {
+                  const isSelected = (courseForm.target_departments || []).includes(dept);
+                  return (
+                    <button
+                      key={dept}
+                      onClick={() => toggleCourseDepartment(dept)}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-medium border transition-colors ${
+                        isSelected 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "bg-background text-foreground border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {dept}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

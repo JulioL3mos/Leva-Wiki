@@ -73,6 +73,7 @@ class UserPublic(BaseModel):
     email: str
     name: str
     role: str
+    department: str = "Geral"
     avatar_url: Optional[str] = None
     created_at: str
 
@@ -82,6 +83,7 @@ class RegisterReq(BaseModel):
     password: str = Field(min_length=6)
     name: str = Field(min_length=1)
     role: Optional[str] = "viewer"  # admin can set role on creation
+    department: Optional[str] = "Geral"
 
 
 class LoginReq(BaseModel):
@@ -177,6 +179,7 @@ async def register(req: RegisterReq, request: Request, response: Response, user:
         "name": req.name.strip(),
         "password_hash": hash_password(req.password),
         "role": role,
+        "department": req.department,
         "avatar_url": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "is_active": True,
@@ -293,6 +296,7 @@ async def seed_admin(db):
             "name": admin_name,
             "password_hash": hash_password(admin_password),
             "role": "admin",
+            "department": "Diretoria",
             "avatar_url": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "is_active": True,
@@ -300,7 +304,7 @@ async def seed_admin(db):
     elif not verify_password(admin_password, existing["password_hash"]):
         await db.users.update_one(
             {"email": admin_email},
-            {"$set": {"password_hash": hash_password(admin_password), "role": "admin"}},
+            {"$set": {"password_hash": hash_password(admin_password), "role": "admin", "department": "Diretoria"}},
         )
 
     # Seed test editor user
@@ -313,6 +317,7 @@ async def seed_admin(db):
             "name": "Editor LEVA",
             "password_hash": hash_password(editor_password),
             "role": "editor",
+            "department": "Vendas",
             "avatar_url": None,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "is_active": True,

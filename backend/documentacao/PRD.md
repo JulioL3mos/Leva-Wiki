@@ -33,7 +33,7 @@ Plataforma corporativa interna de gestão de conhecimento ("Portal LEVA") para u
 - ✅ Biblioteca: upload multipart, listagem com filtros, download streaming, soft-delete.
 - ✅ Academia (Treinamentos): CRUD de cursos/módulos, acompanhamento de progresso de alunos, provas (quizzes) no final dos módulos e controle de acesso por setor.
 - ✅ Admin: aprovação de pendentes, gestão de usuários (papéis e setores).
-- ✅ Setores (Departamentos): Implementado sistema de restrição de acesso por setor (TI, Financeiro, Diretoria, Vendas, Pós Vendas) aplicado na Wiki e na Academia. Diretoria e Admins têm acesso global.
+- ✅ Setores (Departamentos): Implementado sistema de restrição de acesso por setor (TI, Financeiro, Diretoria, Vendas, Pós Vendas) aplicado na Wiki, Academia e Biblioteca de Arquivos. Diretoria e Admins têm acesso global.
 - ✅ Dashboard: stats agregadas (total/recent/popular/by_category/users/files)
 - ✅ Frontend completo com suporte ao modo escuro e interface moderna (shadcn/ui + Tailwind).
 

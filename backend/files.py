@@ -35,6 +35,7 @@ async def upload_file(
     file: UploadFile = File(...),
     category: str = Form("Geral"),
     description: str = Form(""),
+    target_departments: str = Form(""),
     user: dict = Depends(get_current_user),
 ):
     if user["role"] not in ("admin", "editor"):
@@ -67,6 +68,8 @@ async def upload_file(
         result = put_object(path, data, file.content_type or "application/octet-stream")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Falha no upload: {e}")
+    target_deps_list = [d.strip() for d in target_departments.split(",") if d.strip()]
+    
     db = request.app.state.db
     record = {
         "id": file_id,
@@ -76,6 +79,7 @@ async def upload_file(
         "size": result.get("size", len(data)),
         "category": category,
         "description": description,
+        "target_departments": target_deps_list,
         "uploaded_by_id": user["id"],
         "uploaded_by_name": user["name"],
         "is_deleted": False,
@@ -95,6 +99,16 @@ async def list_files(
 ):
     db = request.app.state.db
     query: dict = {"is_deleted": False}
+    
+    # Controle de Visibilidade por Setor
+    if user["role"] != "admin" and user.get("department") != "Diretoria":
+        user_dept = user.get("department", "")
+        query["$or"] = [
+            {"target_departments": {"$exists": False}},
+            {"target_departments": {"$size": 0}},
+            {"target_departments": user_dept}
+        ]
+        
     if category:
         query["category"] = category
     if q:
@@ -109,6 +123,14 @@ async def download_file(file_id: str, request: Request, user: dict = Depends(get
     record = await db.files.find_one({"id": file_id, "is_deleted": False}, {"_id": 0})
     if not record:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+        
+    # Controle de Visibilidade por Setor
+    if user["role"] != "admin" and user.get("department") != "Diretoria":
+        target_deps = record.get("target_departments", [])
+        user_dept = user.get("department", "")
+        if target_deps and len(target_deps) > 0 and user_dept not in target_deps:
+            raise HTTPException(status_code=403, detail="Acesso restrito ao setor do arquivo")
+            
     try:
         data, content_type = get_object(record["storage_path"])
     except Exception as e:

@@ -391,32 +391,32 @@ export function renderBlocks(blocks) {
       flushList();
     }
 
-    if (b.type === "divider") result.push(<hr key={b.id} className="my-6 border-slate-200" />);
-    else if (b.type === "h1") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h1" className="text-4xl font-display font-black tracking-tighter mt-10 mb-4" content={b.content} />);
-    else if (b.type === "h2") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h2" className="text-2xl font-display font-bold tracking-tight mt-8 mb-3" content={b.content} />);
-    else if (b.type === "h3") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h3" className="text-xl font-display font-semibold tracking-tight mt-6 mb-2" content={b.content} />);
-    else if (b.type === "quote") result.push(<blockquote key={b.id} className="border-l-4 border-slate-900 pl-4 italic text-slate-600 my-4 text-lg"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></blockquote>);
-    else if (b.type === "code") result.push(<pre key={b.id} className="font-mono text-sm bg-slate-50 border border-slate-200 rounded-md p-4 my-4 whitespace-pre-wrap text-slate-800">{b.content}</pre>);
+    if (b.type === "divider") result.push(<hr key={b.id} className="my-6 border-border" />);
+    else if (b.type === "h1") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h1" className="text-4xl font-display font-black tracking-tighter mt-10 mb-4 text-foreground" content={b.content} />);
+    else if (b.type === "h2") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h2" className="text-2xl font-display font-bold tracking-tight mt-8 mb-3 text-foreground" content={b.content} />);
+    else if (b.type === "h3") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h3" className="text-xl font-display font-semibold tracking-tight mt-6 mb-2 text-foreground" content={b.content} />);
+    else if (b.type === "quote") result.push(<blockquote key={b.id} className="border-l-4 border-primary pl-4 italic text-muted-foreground my-4 text-lg"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></blockquote>);
+    else if (b.type === "code") result.push(<pre key={b.id} className="font-mono text-sm bg-muted border border-border rounded-md p-4 my-4 whitespace-pre-wrap text-foreground">{b.content}</pre>);
     else if (b.type === "image") {
       const imageUrl = b.content.startsWith("http") ? b.content : `${API_BASE.replace("/api", "")}${b.content}`;
-      result.push(<img key={b.id} src={imageUrl} alt={b.meta?.filename || ""} className="rounded-lg border border-slate-200 my-6 max-h-[600px] w-auto" />);
+      result.push(<img key={b.id} src={imageUrl} alt={b.meta?.filename || ""} className="rounded-lg border border-border my-6 max-h-[600px] w-auto" />);
     }
     else if (b.type === "bulleted") {
       if (!currentList || currentList.type !== 'ul') {
         flushList();
         currentList = { type: 'ul', items: [] };
       }
-      currentList.items.push(<li key={b.id} className="text-slate-700 leading-relaxed marker:text-slate-400"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>);
+      currentList.items.push(<li key={b.id} className="text-foreground leading-relaxed marker:text-muted-foreground"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>);
     }
     else if (b.type === "numbered") {
       if (!currentList || currentList.type !== 'ol') {
         flushList();
         currentList = { type: 'ol', items: [] };
       }
-      currentList.items.push(<li key={b.id} className="text-slate-700 leading-relaxed marker:text-slate-400"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>);
+      currentList.items.push(<li key={b.id} className="text-foreground leading-relaxed marker:text-muted-foreground"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>);
     }
     else {
-      result.push(<MarkdownContent key={b.id} tag="p" className="text-slate-700 leading-relaxed my-3" content={b.content} />);
+      result.push(<MarkdownContent key={b.id} tag="p" className="text-foreground leading-relaxed my-3" content={b.content} />);
     }
   });
 

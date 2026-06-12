@@ -45,17 +45,17 @@ function uid() {
 function blockClass(type) {
   switch (type) {
     case "h1":
-      return "text-4xl font-display font-black tracking-tighter text-foreground outline-none w-full";
+      return "text-4xl font-display font-black tracking-tighter text-foreground outline-none w-full !bg-transparent";
     case "h2":
-      return "text-2xl font-display font-bold tracking-tight text-foreground outline-none w-full";
+      return "text-2xl font-display font-bold tracking-tight text-foreground outline-none w-full !bg-transparent";
     case "h3":
-      return "text-xl font-display font-semibold tracking-tight text-foreground outline-none w-full";
+      return "text-xl font-display font-semibold tracking-tight text-foreground outline-none w-full !bg-transparent";
     case "quote":
-      return "text-lg italic text-muted-foreground border-l-4 border-primary pl-4 outline-none w-full";
+      return "text-lg italic text-muted-foreground border-l-4 border-primary pl-4 outline-none w-full !bg-transparent";
     case "code":
       return "font-mono text-sm bg-muted border border-border rounded-md p-3 text-foreground outline-none w-full whitespace-pre-wrap";
     default:
-      return "text-base text-foreground leading-relaxed outline-none w-full";
+      return "text-base text-foreground leading-relaxed outline-none w-full !bg-transparent";
   }
 }
 

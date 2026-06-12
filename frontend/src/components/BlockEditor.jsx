@@ -154,15 +154,30 @@ export default function BlockEditor({ blocks, onChange }) {
   const handleKeyDown = (e, b, idx) => {
     if (e.key === "Enter" && !e.shiftKey && b.type !== "code") {
       e.preventDefault();
-      // If there's a slash menu open, and they press enter, we should ideally pick the first option or ignore.
-      // But let's just close it.
+      // Se houver menu aberto, apenas fecha
       if (slashMenu?.blockId === b.id) setSlashMenu(null);
-      insertBlock(b.id, "paragraph");
+      
+      // Comportamento de Lista: Se for lista e tiver conteúdo, cria outra lista igual.
+      // Se for lista vazia e apertar Enter, transforma em parágrafo normal para "sair" da lista.
+      if ((b.type === "bulleted" || b.type === "numbered")) {
+        if ((b.content || "") === "") {
+          updateBlock(b.id, { type: "paragraph" });
+        } else {
+          insertBlock(b.id, b.type);
+        }
+      } else {
+        insertBlock(b.id, "paragraph");
+      }
     } else if (e.key === "Backspace" && (b.content || "") === "") {
       e.preventDefault();
-      const prev = blocks[idx - 1];
-      removeBlock(b.id);
-      if (prev) setTimeout(() => refs.current[prev.id]?.focus(), 10);
+      // Se for apagar um bloco que não seja parágrafo, transforma em parágrafo primeiro
+      if (b.type !== "paragraph") {
+        updateBlock(b.id, { type: "paragraph" });
+      } else {
+        const prev = blocks[idx - 1];
+        removeBlock(b.id);
+        if (prev) setTimeout(() => refs.current[prev.id]?.focus(), 10);
+      }
     } else if (e.key === "Escape" && slashMenu?.blockId === b.id) {
       setSlashMenu(null);
     }
@@ -195,6 +210,15 @@ export default function BlockEditor({ blocks, onChange }) {
       onChange([{ id: uid(), type: "paragraph", content: "", meta: {} }]);
     }
   }, [blocks, onChange]);
+
+  const getListNumber = (currentIndex) => {
+    let num = 1;
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (blocks[i].type === "numbered") num++;
+      else break;
+    }
+    return num;
+  };
 
   return (
     <div className="block-editor space-y-1.5" data-testid="block-editor">
@@ -229,7 +253,7 @@ export default function BlockEditor({ blocks, onChange }) {
                           <div className="group flex items-start gap-2" data-testid={`block-${b.type}`}>
                             <BlockHandle b={b} insertBlock={insertBlock} removeBlock={removeBlock} updateBlock={updateBlock} dragHandleProps={handleProps} />
                             {b.type === "bulleted" && <span className="mt-2 text-muted-foreground">•</span>}
-                            {b.type === "numbered" && <span className="mt-2 text-muted-foreground font-mono text-sm">{idx + 1}.</span>}
+                            {b.type === "numbered" && <span className="mt-2 text-muted-foreground font-mono text-sm">{getListNumber(idx)}.</span>}
                             {b.type === "code" ? (
                               <textarea
                                 ref={(el) => (refs.current[b.id] = el)}
@@ -347,19 +371,55 @@ const MarkdownContent = ({ content, tag: Tag, className, id }) => {
 };
 
 export function renderBlocks(blocks) {
-  return blocks?.map((b, idx) => {
-    if (b.type === "divider") return <hr key={b.id} className="my-6 border-slate-200" />;
-    if (b.type === "h1") return <MarkdownContent key={b.id} id={`block-${b.id}`} tag="h1" className="text-4xl font-display font-black tracking-tighter mt-10 mb-4" content={b.content} />;
-    if (b.type === "h2") return <MarkdownContent key={b.id} id={`block-${b.id}`} tag="h2" className="text-2xl font-display font-bold tracking-tight mt-8 mb-3" content={b.content} />;
-    if (b.type === "h3") return <MarkdownContent key={b.id} id={`block-${b.id}`} tag="h3" className="text-xl font-display font-semibold tracking-tight mt-6 mb-2" content={b.content} />;
-    if (b.type === "quote") return <blockquote key={b.id} className="border-l-4 border-slate-900 pl-4 italic text-slate-600 my-4 text-lg"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></blockquote>;
-    if (b.type === "code") return <pre key={b.id} className="font-mono text-sm bg-slate-50 border border-slate-200 rounded-md p-4 my-4 whitespace-pre-wrap text-slate-800">{b.content}</pre>;
-    if (b.type === "image") {
-      const imageUrl = b.content.startsWith("http") ? b.content : `${API_BASE.replace("/api", "")}${b.content}`;
-      return <img key={b.id} src={imageUrl} alt={b.meta?.filename || ""} className="rounded-lg border border-slate-200 my-6 max-h-[600px] w-auto" />;
+  const result = [];
+  let currentList = null;
+
+  const flushList = () => {
+    if (currentList) {
+      const Tag = currentList.type;
+      result.push(
+        <Tag key={`list-${result.length}`} className={Tag === 'ol' ? "list-decimal ml-6 my-4 space-y-1" : "list-disc ml-6 my-4 space-y-1"}>
+          {currentList.items}
+        </Tag>
+      );
+      currentList = null;
     }
-    if (b.type === "bulleted") return <li key={b.id} className="ml-6 list-disc text-slate-700 leading-relaxed"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>;
-    if (b.type === "numbered") return <li key={b.id} className="ml-6 list-decimal text-slate-700 leading-relaxed"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>;
-    return <MarkdownContent key={b.id} tag="p" className="text-slate-700 leading-relaxed my-3" content={b.content} />;
+  };
+
+  blocks?.forEach((b) => {
+    if (b.type !== "numbered" && b.type !== "bulleted") {
+      flushList();
+    }
+
+    if (b.type === "divider") result.push(<hr key={b.id} className="my-6 border-slate-200" />);
+    else if (b.type === "h1") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h1" className="text-4xl font-display font-black tracking-tighter mt-10 mb-4" content={b.content} />);
+    else if (b.type === "h2") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h2" className="text-2xl font-display font-bold tracking-tight mt-8 mb-3" content={b.content} />);
+    else if (b.type === "h3") result.push(<MarkdownContent key={b.id} id={`block-${b.id}`} tag="h3" className="text-xl font-display font-semibold tracking-tight mt-6 mb-2" content={b.content} />);
+    else if (b.type === "quote") result.push(<blockquote key={b.id} className="border-l-4 border-slate-900 pl-4 italic text-slate-600 my-4 text-lg"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></blockquote>);
+    else if (b.type === "code") result.push(<pre key={b.id} className="font-mono text-sm bg-slate-50 border border-slate-200 rounded-md p-4 my-4 whitespace-pre-wrap text-slate-800">{b.content}</pre>);
+    else if (b.type === "image") {
+      const imageUrl = b.content.startsWith("http") ? b.content : `${API_BASE.replace("/api", "")}${b.content}`;
+      result.push(<img key={b.id} src={imageUrl} alt={b.meta?.filename || ""} className="rounded-lg border border-slate-200 my-6 max-h-[600px] w-auto" />);
+    }
+    else if (b.type === "bulleted") {
+      if (!currentList || currentList.type !== 'ul') {
+        flushList();
+        currentList = { type: 'ul', items: [] };
+      }
+      currentList.items.push(<li key={b.id} className="text-slate-700 leading-relaxed marker:text-slate-400"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>);
+    }
+    else if (b.type === "numbered") {
+      if (!currentList || currentList.type !== 'ol') {
+        flushList();
+        currentList = { type: 'ol', items: [] };
+      }
+      currentList.items.push(<li key={b.id} className="text-slate-700 leading-relaxed marker:text-slate-400"><ReactMarkdown components={{p: 'span', a: ({node, ...p}) => <a className="underline" {...p}/>}}>{b.content}</ReactMarkdown></li>);
+    }
+    else {
+      result.push(<MarkdownContent key={b.id} tag="p" className="text-slate-700 leading-relaxed my-3" content={b.content} />);
+    }
   });
+
+  flushList();
+  return result;
 }

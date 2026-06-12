@@ -26,21 +26,16 @@ Plataforma corporativa interna de gestão de conhecimento ("Portal LEVA") para u
 - Dashboard com conteúdos recentes, mais acessados e estatísticas
 - Painel administrativo (aprovação de conteúdo + gestão de usuários)
 
-## What's been implemented (2026-02-07)
-- ✅ Backend modular: `auth.py`, `wiki.py`, `files.py`, `users_admin.py`, `storage_client.py`, `server.py`
+## What's been implemented (Atualizado)
+- ✅ Backend modular: `auth.py`, `wiki.py`, `files.py`, `users_admin.py`, `storage_client.py`, `server.py`, `training.py`
 - ✅ JWT auth com cookies httpOnly, bcrypt, lockout, admin/editor seeded
-- ✅ Wiki: CRUD de artigos com blocos (paragraph, h1/h2/h3, bulleted, numbered, quote, code, divider), categorias com seed automático, tags com agregação, histórico de versões, contador de views, workflow editor → pending → published
-- ✅ Biblioteca: upload multipart, listagem com filtros, download streaming, soft-delete; integração Emergent Object Storage funcionando
-- ✅ Admin: aprovar/rejeitar pendentes, gestão de usuários (lista/role update/delete)
+- ✅ Wiki: CRUD de artigos com blocos (paragraph, h1/h2/h3, bulleted, numbered, quote, code, divider, image), categorias com seed automático, tags, histórico de versões, views, controle de visibilidade por setor.
+- ✅ Biblioteca: upload multipart, listagem com filtros, download streaming, soft-delete.
+- ✅ Academia (Treinamentos): CRUD de cursos/módulos, acompanhamento de progresso de alunos, provas (quizzes) no final dos módulos e controle de acesso por setor.
+- ✅ Admin: aprovação de pendentes, gestão de usuários (papéis e setores).
+- ✅ Setores (Departamentos): Implementado sistema de restrição de acesso por setor (TI, Financeiro, Diretoria, Vendas, Pós Vendas) aplicado na Wiki e na Academia. Diretoria e Admins têm acesso global.
 - ✅ Dashboard: stats agregadas (total/recent/popular/by_category/users/files)
-- ✅ Frontend completo:
-  - LoginPage split-screen com imagem automotiva premium
-  - Layout com sidebar (categorias dinâmicas + fallback), topbar glass, user dropdown
-  - Cmd+K command palette (busca artigos + ações)
-  - BlockEditor estilo Notion (insert via "+", transformar via grip)
-  - Páginas: Dashboard, Wiki list (filtros + chips), Article view (com histórico), Editor, Admin (aprovações + usuários), Biblioteca, Perfil
-- ✅ Tipografia Manrope + IBM Plex Sans, paleta Swiss/High-Contrast (slate-900 + branco), zero gradientes roxos
-- ✅ Testing: backend 28/28 pytest pass; frontend ~95% E2E (todos fluxos integrados); bug crítico de register-500 (ObjectId leak) corrigido
+- ✅ Frontend completo com suporte ao modo escuro e interface moderna (shadcn/ui + Tailwind).
 
 ## Prioritized backlog
 ### P1 (próxima fase imediata)

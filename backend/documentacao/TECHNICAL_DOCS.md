@@ -24,17 +24,18 @@ O projeto é dividido em duas partes principais:
 
 ### Backend (`/backend`)
 - `server.py`: Ponto de entrada da API, configuração de CORS e carregamento de rotas.
-- `auth.py`: Lógica de login, registro, proteção de rotas por cargos (Admin/Editor/Viewer) e hashing de senhas com `bcrypt`.
-- `wiki.py`: CRUD de artigos, gerenciamento de categorias e o novo sistema de upload de imagens para o editor.
+- `auth.py`: Lógica de login, registro, proteção de rotas por cargos (Admin/Editor/Viewer) e hashing de senhas com `bcrypt`. Adicionado suporte a setores.
+- `wiki.py`: CRUD de artigos, gerenciamento de categorias e o novo sistema de upload de imagens para o editor. Filtra visibilidade por setor.
+- `training.py`: CRUD e gerenciamento do módulo Academia (cursos, módulos, progresso de alunos e provinhas/quizzes).
 - `files.py`: Gerenciamento da biblioteca de arquivos.
 - `storage_client.py`: Abstração de armazenamento. Atualmente configurado para **Armazenamento Local** na pasta `backend/uploads`.
 - `requirements.txt`: Dependências do Python.
 
 ### Frontend (`/frontend`)
-- `src/App.js`: Configuração das rotas (Dashboard, Wiki, Admin, etc).
+- `src/App.js`: Configuração das rotas (Dashboard, Wiki, Academia, Admin, etc).
 - `src/lib/api.js`: Cliente central para chamadas ao backend.
 - `src/components/BlockEditor.jsx`: Componente central do editor. Gerencia blocos de texto, títulos, listas, código e **Imagens**.
-- `src/pages/`: Páginas completas do sistema.
+- `src/pages/`: Páginas completas do sistema (incluindo `AdminTraining.jsx` e visualizador de cursos).
 
 ---
 
@@ -44,6 +45,7 @@ O projeto é dividido em duas partes principais:
 1.  **Cookies httpOnly:** O token de acesso não pode ser lido por scripts do navegador, prevenindo roubo de sessão.
 2.  **Hashing de Senha:** Senhas são salvas com `bcrypt`.
 3.  **Controle de Acesso:** Rotas sensíveis (como criar categorias ou deletar usuários) exigem papel de `admin`.
+4.  **Acesso por Setor:** Restrição de visualização de conteúdo (Wiki e Academia) baseado no setor do usuário logado (ex: TI só vê conteúdo da TI ou Geral).
 
 ### Pontos de atenção para o futuro:
 1.  **CORS:** Em produção, o `FRONTEND_URL` deve ser restrito ao domínio oficial da empresa.
@@ -83,6 +85,8 @@ A forma recomendada para implantação no servidor da empresa é utilizando **Do
 ---
 
 ## 📝 Histórico de Customizações Recentes
+- **Academia (Treinamentos):** Implementado um módulo completo de treinamentos (Academia) com cursos, progresso e sistema de provas (quizzes) obrigatórias.
+- **Controle de Visibilidade:** Agora é possível restringir conteúdos da Wiki e da Academia apenas para determinados setores (TI, Financeiro, Diretoria, etc.). Usuários administradores e da Diretoria têm acesso global.
 - **Upload Local:** Removida dependência de nuvem (Emergent Storage). Arquivos agora ficam em `backend/uploads`.
 - **Imagens no Editor:** Adicionado suporte para inserir prints e fotos diretamente no corpo dos artigos da Wiki.
 - **Limpeza de Dependências:** Removidas bibliotecas incompatíveis com Python 3.14 (numpy/pandas) que não eram utilizadas.

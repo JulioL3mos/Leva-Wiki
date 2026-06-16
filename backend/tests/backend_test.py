@@ -299,11 +299,310 @@ class TestAdmin:
         admin_session.delete(f"{BASE_URL}/api/admin/users/{target['id']}")
 
 
+
+
+# ---------------- Change Password ----------------
+class TestChangePassword:
+    def test_change_and_relogin(self):
+        """Create a user, change their password, verify old fails and new works."""
+        s = new_session()
+        email = f"test_pw_{uuid.uuid4().hex[:6]}@example.com"
+        old_pw = "oldpassword1"
+        new_pw = "newpassword2"
+
+        # Register
+        r = s.post(f"{BASE_URL}/api/auth/register",
+                   json={"email": email, "password": old_pw, "name": "PW Test User"})
+        assert r.status_code == 200
+
+        # Login
+        r = s.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": old_pw})
+        assert r.status_code == 200
+
+        # Change password
+        r = s.post(f"{BASE_URL}/api/auth/change-password",
+                   json={"current_password": old_pw, "new_password": new_pw})
+        assert r.status_code == 200
+
+        # Old password should fail
+        s2 = new_session()
+        r = s2.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": old_pw})
+        assert r.status_code == 401
+
+        # New password should work
+        s3 = new_session()
+        r = s3.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": new_pw})
+        assert r.status_code == 200
+
+        # Cleanup: delete via admin
+        admin_s = new_session()
+        admin_s.post(f"{BASE_URL}/api/auth/login", json=ADMIN)
+        users = admin_s.get(f"{BASE_URL}/api/admin/users").json()
+        target = next((u for u in users if u["email"] == email), None)
+        if target:
+            admin_s.delete(f"{BASE_URL}/api/admin/users/{target['id']}")
+
+    def test_wrong_current_password_rejected(self, admin_session):
+        """Change-password with wrong current password must return 400."""
+        r = admin_session.post(f"{BASE_URL}/api/auth/change-password",
+                               json={"current_password": "totallywrong", "new_password": "anything1"})
+        assert r.status_code == 400
+
+
+# ---------------- Sector Visibility ----------------
+class TestSectorVisibility:
+    """Verifica que conteúdo restrito por setor não aparece para usuários de outro setor."""
+
+    @pytest.fixture(scope="class")
+    def ti_session(self, admin_session):
+        """Cria e loga um usuário do setor TI."""
+        s = new_session()
+        email = f"test_ti_{uuid.uuid4().hex[:6]}@example.com"
+        admin_s = new_session()
+        admin_s.post(f"{BASE_URL}/api/auth/login", json=ADMIN)
+        admin_s.post(f"{BASE_URL}/api/auth/register",
+                     json={"email": email, "password": "ti123456", "name": "TI User",
+                           "role": "viewer", "department": "TI"})
+        s.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": "ti123456"})
+        yield s, email
+        # Cleanup
+        users = admin_s.get(f"{BASE_URL}/api/admin/users").json()
+        t = next((u for u in users if u["email"] == email), None)
+        if t:
+            admin_s.delete(f"{BASE_URL}/api/admin/users/{t['id']}")
+
+    @pytest.fixture(scope="class")
+    def financeiro_session(self, admin_session):
+        """Cria e loga um usuário do setor Financeiro."""
+        s = new_session()
+        email = f"test_fin_{uuid.uuid4().hex[:6]}@example.com"
+        admin_s = new_session()
+        admin_s.post(f"{BASE_URL}/api/auth/login", json=ADMIN)
+        admin_s.post(f"{BASE_URL}/api/auth/register",
+                     json={"email": email, "password": "fin123456", "name": "Financeiro User",
+                           "role": "viewer", "department": "Financeiro"})
+        s.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": "fin123456"})
+        yield s, email
+        users = admin_s.get(f"{BASE_URL}/api/admin/users").json()
+        t = next((u for u in users if u["email"] == email), None)
+        if t:
+            admin_s.delete(f"{BASE_URL}/api/admin/users/{t['id']}")
+
+    def test_wiki_article_restricted_to_financeiro(self, admin_session, ti_session, financeiro_session):
+        """Artigo restrito ao Financeiro: TI não vê, Financeiro vê, Admin vê."""
+        # Admin cria artigo restrito ao Financeiro
+        payload = {
+            "title": "TEST Artigo Financeiro",
+            "summary": "Apenas Financeiro",
+            "category": "Geral",
+            "tags": [],
+            "blocks": [{"id": "b1", "type": "paragraph", "content": "confidencial", "meta": {}}],
+            "status": "published",
+            "target_departments": ["Financeiro"],
+        }
+        r = admin_session.post(f"{BASE_URL}/api/wiki/articles", json=payload)
+        assert r.status_code == 200
+        art_id = r.json()["id"]
+
+        try:
+            # Financeiro deve ver
+            s_fin, _ = financeiro_session
+            all_ids_fin = [a["id"] for a in s_fin.get(f"{BASE_URL}/api/wiki/articles").json()]
+            assert art_id in all_ids_fin, "Financeiro deveria ver o artigo restrito ao setor"
+
+            # TI não deve ver
+            s_ti, _ = ti_session
+            all_ids_ti = [a["id"] for a in s_ti.get(f"{BASE_URL}/api/wiki/articles").json()]
+            assert art_id not in all_ids_ti, "TI não deveria ver artigo restrito ao Financeiro"
+
+            # Admin sempre vê
+            all_ids_admin = [a["id"] for a in admin_session.get(f"{BASE_URL}/api/wiki/articles").json()]
+            assert art_id in all_ids_admin
+
+        finally:
+            admin_session.delete(f"{BASE_URL}/api/wiki/articles/{art_id}")
+
+    def test_file_restricted_to_financeiro(self, admin_session, ti_session, financeiro_session):
+        """Arquivo restrito ao Financeiro: TI não vê no listagem nem consegue baixar."""
+        # Admin faz upload
+        admin_s_raw = requests.Session()
+        admin_s_raw.cookies.update(admin_session.cookies)
+        files = {"file": ("secret.pdf", b"%PDF-1.4\n%FINANCEIRO\n", "application/pdf")}
+        data = {"category": "Geral", "description": "TEST confidential", "target_departments": "Financeiro"}
+        r = admin_s_raw.post(f"{BASE_URL}/api/files/upload", files=files, data=data, timeout=30)
+        assert r.status_code == 200
+        file_id = r.json()["id"]
+
+        try:
+            # Financeiro deve ver
+            s_fin, _ = financeiro_session
+            ids_fin = [f["id"] for f in s_fin.get(f"{BASE_URL}/api/files").json()]
+            assert file_id in ids_fin
+
+            # TI não deve ver na listagem
+            s_ti, _ = ti_session
+            ids_ti = [f["id"] for f in s_ti.get(f"{BASE_URL}/api/files").json()]
+            assert file_id not in ids_ti
+
+            # TI não consegue baixar diretamente
+            r_dl = s_ti.get(f"{BASE_URL}/api/files/{file_id}/download")
+            assert r_dl.status_code == 403
+
+        finally:
+            admin_session.delete(f"{BASE_URL}/api/files/{file_id}")
+
+
+# ---------------- Academia (Training) ----------------
+class TestTraining:
+    """Testa o ciclo completo do módulo de Academia."""
+
+    def test_viewer_cannot_create_course(self, viewer_session):
+        s, _ = viewer_session
+        r = s.post(f"{BASE_URL}/api/training/courses",
+                   json={"title": "Hacked Course", "status": "published"})
+        assert r.status_code == 403
+
+    def test_admin_creates_course_and_module(self, admin_session):
+        # Cria curso
+        r = admin_session.post(f"{BASE_URL}/api/training/courses", json={
+            "title": "TEST Curso Completo",
+            "description": "Curso de testes",
+            "status": "published",
+            "target_departments": [],
+        })
+        assert r.status_code == 200
+        pytest.test_course_id = r.json()["id"]
+
+        # Cria módulo de aula
+        r = admin_session.post(f"{BASE_URL}/api/training/modules", json={
+            "course_id": pytest.test_course_id,
+            "title": "Módulo 1 - Introdução",
+            "type": "lesson",
+            "order": 0,
+            "content": [{"id": "b1", "type": "paragraph", "content": "Bem-vindo!", "meta": {}}],
+        })
+        assert r.status_code == 200
+        pytest.test_module_lesson_id = r.json()["id"]
+
+        # Cria módulo de quiz
+        r = admin_session.post(f"{BASE_URL}/api/training/modules", json={
+            "course_id": pytest.test_course_id,
+            "title": "Quiz Final",
+            "type": "quiz",
+            "order": 1,
+            "passing_score": 50,
+        })
+        assert r.status_code == 200
+        pytest.test_module_quiz_id = r.json()["id"]
+
+    def test_admin_sets_quiz_questions(self, admin_session):
+        questions = [
+            {"id": "q1", "text": "Quanto é 1+1?", "options": ["1", "2", "3"], "correct_index": 1},
+            {"id": "q2", "text": "Cor do céu?", "options": ["Verde", "Azul", "Vermelho"], "correct_index": 1},
+        ]
+        r = admin_session.post(
+            f"{BASE_URL}/api/training/modules/{pytest.test_module_quiz_id}/questions",
+            json=questions,
+        )
+        assert r.status_code == 200
+
+    def test_viewer_sees_published_course(self, viewer_session):
+        s, _ = viewer_session
+        r = s.get(f"{BASE_URL}/api/training/courses")
+        assert r.status_code == 200
+        ids = [c["id"] for c in r.json()]
+        assert pytest.test_course_id in ids
+
+    def test_viewer_completes_lesson_module(self, viewer_session):
+        s, _ = viewer_session
+        r = s.post(f"{BASE_URL}/api/training/modules/{pytest.test_module_lesson_id}/complete")
+        assert r.status_code == 200
+        assert r.json()["completed"] is True
+
+    def test_progress_recorded(self, viewer_session):
+        s, _ = viewer_session
+        r = s.get(f"{BASE_URL}/api/training/progress")
+        assert r.status_code == 200
+        progress_list = r.json()
+        course_progress = next(
+            (p for p in progress_list if p["course_id"] == pytest.test_course_id), None
+        )
+        assert course_progress is not None
+        assert pytest.test_module_lesson_id in course_progress["completed_modules"]
+
+    def test_quiz_submission_correct(self, viewer_session):
+        s, _ = viewer_session
+        r = s.post(
+            f"{BASE_URL}/api/training/modules/{pytest.test_module_quiz_id}/submit",
+            json={"answers": {"q1": 1, "q2": 1}},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["passed"] is True
+        assert body["score"] == 100
+
+    def test_quiz_submission_wrong(self, viewer_session):
+        s, _ = viewer_session
+        r = s.post(
+            f"{BASE_URL}/api/training/modules/{pytest.test_module_quiz_id}/submit",
+            json={"answers": {"q1": 0, "q2": 0}},  # ambas erradas
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["passed"] is False
+        assert body["score"] == 0
+
+    def test_course_sector_restriction(self, admin_session):
+        """Curso restrito ao TI não aparece para usuário do Financeiro."""
+        # Cria usuário TI e Financeiro temporários
+        admin_s2 = new_session()
+        admin_s2.post(f"{BASE_URL}/api/auth/login", json=ADMIN)
+
+        ti_email = f"test_tr_ti_{uuid.uuid4().hex[:5]}@example.com"
+        fin_email = f"test_tr_fin_{uuid.uuid4().hex[:5]}@example.com"
+        admin_s2.post(f"{BASE_URL}/api/auth/register",
+                      json={"email": ti_email, "password": "ti123456", "name": "TI Tr", "role": "viewer", "department": "TI"})
+        admin_s2.post(f"{BASE_URL}/api/auth/register",
+                      json={"email": fin_email, "password": "fin123456", "name": "Fin Tr", "role": "viewer", "department": "Financeiro"})
+
+        s_ti = new_session()
+        s_ti.post(f"{BASE_URL}/api/auth/login", json={"email": ti_email, "password": "ti123456"})
+        s_fin = new_session()
+        s_fin.post(f"{BASE_URL}/api/auth/login", json={"email": fin_email, "password": "fin123456"})
+
+        # Cria curso restrito ao TI
+        r = admin_s2.post(f"{BASE_URL}/api/training/courses", json={
+            "title": "TEST Curso TI Restrito",
+            "status": "published",
+            "target_departments": ["TI"],
+        })
+        assert r.status_code == 200
+        restricted_id = r.json()["id"]
+
+        try:
+            # TI vê o curso
+            ids_ti = [c["id"] for c in s_ti.get(f"{BASE_URL}/api/training/courses").json()]
+            assert restricted_id in ids_ti
+
+            # Financeiro não vê
+            ids_fin = [c["id"] for c in s_fin.get(f"{BASE_URL}/api/training/courses").json()]
+            assert restricted_id not in ids_fin
+
+        finally:
+            # Cleanup
+            users = admin_s2.get(f"{BASE_URL}/api/admin/users").json()
+            for email in (ti_email, fin_email):
+                t = next((u for u in users if u["email"] == email), None)
+                if t:
+                    admin_s2.delete(f"{BASE_URL}/api/admin/users/{t['id']}")
+            # Note: no delete endpoint for courses, so we leave it (it has TEST in name)
+
+
 # ---------------- Cleanup ----------------
 def test_zz_cleanup(admin_session):
-    aid = getattr(pytest, "admin_article_id", None)
-    if aid:
-        admin_session.delete(f"{BASE_URL}/api/wiki/articles/{aid}")
-    eid = getattr(pytest, "editor_article_id", None)
-    if eid:
-        admin_session.delete(f"{BASE_URL}/api/wiki/articles/{eid}")
+    """Remove todos os dados de teste criados durante a suite."""
+    for attr in ("admin_article_id", "editor_article_id"):
+        aid = getattr(pytest, attr, None)
+        if aid:
+            admin_session.delete(f"{BASE_URL}/api/wiki/articles/{aid}")
+

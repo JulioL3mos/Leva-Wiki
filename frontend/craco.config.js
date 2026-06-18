@@ -61,6 +61,16 @@ let webpackConfig = {
 };
 
 webpackConfig.devServer = (devServerConfig) => {
+  // Permite acesso via ngrok e encaminha /api para o backend local
+  devServerConfig.allowedHosts = "all";
+  devServerConfig.proxy = [
+    {
+      context: ["/api"],
+      target: process.env.REACT_APP_BACKEND_URL || "http://localhost:8000",
+      changeOrigin: true,
+    },
+  ];
+
   // Add health check endpoints if enabled
   if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
     const originalSetupMiddlewares = devServerConfig.setupMiddlewares;

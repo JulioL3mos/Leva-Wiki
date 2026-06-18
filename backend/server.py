@@ -70,9 +70,13 @@ app.include_router(files_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
 app.include_router(training_router, prefix="/api")
 
-# CORS — allow frontend origin with credentials
+# CORS — allow frontend origin(s) with credentials (comma-separated in FRONTEND_URL)
 frontend_url = os.environ.get("FRONTEND_URL", "*")
-allow_origins = [frontend_url] if frontend_url != "*" else ["*"]
+allow_origins = (
+    [o.strip() for o in frontend_url.split(",") if o.strip()]
+    if frontend_url != "*"
+    else ["*"]
+)
 # If wildcard with credentials: switch to regex
 if frontend_url == "*":
     app.add_middleware(

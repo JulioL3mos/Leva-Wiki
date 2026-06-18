@@ -169,7 +169,7 @@ export default function FilesPage() {
                 <span>{f.uploaded_by_name}</span>
                 <div className="flex items-center gap-2">
                   <a
-                    href={`${process.env.REACT_APP_BACKEND_URL}/api/files/${f.id}/download`}
+                    href={`/api/files/${f.id}/download`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-muted-foreground hover:text-foreground font-medium"

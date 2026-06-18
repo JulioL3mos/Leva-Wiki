@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../lib/api";
-import { useAuth } from "../contexts/AuthContext";
+import BlockEditor from "../components/BlockEditor";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -25,6 +25,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+const emptyBlock = () => ({ id: uid(), type: "paragraph", content: "", meta: {} });
+
 export default function AdminTraining() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,9 +36,11 @@ export default function AdminTraining() {
   const [courseDialog, setCourseDialog] = useState(false);
   const [moduleDialog, setModuleDialog] = useState(false);
   const [questionDialog, setQuestionDialog] = useState(false);
+  const [contentDialog, setContentDialog] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [editingModule, setEditingModule] = useState(null);
   const [editingQuizId, setEditingQuizId] = useState(null);
+  const [editingContentModule, setEditingContentModule] = useState(null);
 
   // Course form
   const [courseForm, setCourseForm] = useState({ title: "", description: "", status: "draft", target_departments: [] });
@@ -60,6 +66,9 @@ export default function AdminTraining() {
 
   // Questions form
   const [questions, setQuestions] = useState([]);
+
+  // Lesson content form
+  const [contentBlocks, setContentBlocks] = useState([emptyBlock()]);
 
   const loadCourses = async () => {
     try {
@@ -222,6 +231,30 @@ export default function AdminTraining() {
     }
   };
 
+  // ---- Lesson content ----
+  const openContentEditor = (mod) => {
+    setEditingContentModule(mod);
+    setContentBlocks(
+      mod.content?.length
+        ? mod.content.map((b, i) => ({ ...b, id: b.id || `b_${i}` }))
+        : [emptyBlock()]
+    );
+    setContentDialog(true);
+  };
+
+  const saveContent = async () => {
+    try {
+      await api.patch(`/training/modules/${editingContentModule.id}`, {
+        content: contentBlocks,
+      });
+      toast.success("Conteúdo salvo");
+      setContentDialog(false);
+      loadCourses();
+    } catch (e) {
+      toast.error("Erro ao salvar conteúdo");
+    }
+  };
+
   if (loading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -348,7 +381,7 @@ export default function AdminTraining() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
-                              {mod.type === "quiz" && (
+                              {mod.type === "quiz" ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -356,6 +389,15 @@ export default function AdminTraining() {
                                   className="gap-1 text-xs"
                                 >
                                   <ClipboardCheck className="w-3 h-3" /> Perguntas
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openContentEditor(mod)}
+                                  className="gap-1 text-xs"
+                                >
+                                  <BookOpen className="w-3 h-3" /> Conteúdo
                                 </Button>
                               )}
                               <Button
@@ -602,6 +644,28 @@ export default function AdminTraining() {
             </Button>
             <Button onClick={saveQuestions} className="gap-1">
               <Save className="w-4 h-4" /> Salvar Perguntas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lesson Content Dialog */}
+      <Dialog open={contentDialog} onOpenChange={setContentDialog}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Conteúdo da aula{editingContentModule ? `: ${editingContentModule.title}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 border-t border-border">
+            <BlockEditor blocks={contentBlocks} onChange={setContentBlocks} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContentDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={saveContent} className="gap-1">
+              <Save className="w-4 h-4" /> Salvar Conteúdo
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -105,7 +105,7 @@ export default function DashboardPage() {
                   className="flex items-start gap-3 group"
                   data-testid={`dash-popular-${a.id}`}
                 >
-                  <div className="font-display font-black text-3xl text-muted/30 leading-none w-7 shrink-0">
+                  <div className="font-display font-black text-3xl text-muted-foreground/80 leading-none w-7 shrink-0">
                     {i + 1}
                   </div>
                   <div className="min-w-0 flex-1">

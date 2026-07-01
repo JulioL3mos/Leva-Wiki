@@ -17,6 +17,7 @@ import {
   GripVertical,
   Image as ImageIcon,
   Upload,
+  MoreVertical,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,6 +38,8 @@ const TYPES = [
   { type: "image", label: "Imagem", icon: ImageIcon, placeholder: "" },
   { type: "divider", label: "Divisor", icon: Minus, placeholder: "" },
 ];
+
+const normalizeText = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -128,6 +131,15 @@ export default function BlockEditor({ blocks, onChange }) {
   const refs = useRef({});
   const [slashMenu, setSlashMenu] = useState(null);
 
+  useEffect(() => {
+    if (slashMenu) {
+      const activeEl = document.getElementById(`slash-menu-item-${slashMenu.selectedIndex}`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: "nearest" });
+      }
+    }
+  }, [slashMenu?.selectedIndex]);
+
   const updateBlock = (id, patch) => {
     onChange(blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)));
   };
@@ -152,6 +164,34 @@ export default function BlockEditor({ blocks, onChange }) {
   };
 
   const handleKeyDown = (e, b, idx) => {
+    if (slashMenu?.blockId === b.id) {
+      const query = normalizeText(slashMenu.query || "");
+      const filteredTypes = TYPES.filter(t => normalizeText(t.label).includes(query));
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (filteredTypes.length > 0) {
+          setSlashMenu(prev => ({ ...prev, selectedIndex: (prev.selectedIndex + 1) % filteredTypes.length }));
+        }
+        return;
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (filteredTypes.length > 0) {
+          setSlashMenu(prev => ({ ...prev, selectedIndex: (prev.selectedIndex - 1 + filteredTypes.length) % filteredTypes.length }));
+        }
+        return;
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (filteredTypes.length > 0) {
+          // Fallback para 0 se o índice estiver fora do escopo após filtragem
+          const idxToSelect = slashMenu.selectedIndex < filteredTypes.length ? slashMenu.selectedIndex : 0;
+          updateBlock(b.id, { type: filteredTypes[idxToSelect].type, content: "" });
+        }
+        setSlashMenu(null);
+        setTimeout(() => refs.current[b.id]?.focus(), 10);
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.shiftKey && b.type !== "code") {
       e.preventDefault();
       // Se houver menu aberto, apenas fecha
@@ -187,7 +227,9 @@ export default function BlockEditor({ blocks, onChange }) {
     const val = e.target.value;
     updateBlock(b.id, { content: val });
     if (val === "/") {
-      setSlashMenu({ blockId: b.id });
+      setSlashMenu({ blockId: b.id, query: "", selectedIndex: 0 });
+    } else if (val.startsWith("/") && slashMenu?.blockId === b.id) {
+      setSlashMenu(prev => ({ ...prev, query: val.slice(1).toLowerCase(), selectedIndex: 0 }));
     } else if (slashMenu?.blockId === b.id) {
       setSlashMenu(null);
     }
@@ -221,13 +263,17 @@ export default function BlockEditor({ blocks, onChange }) {
   };
 
   return (
-    <div className="block-editor space-y-1.5" data-testid="block-editor">
+    <div className="block-editor space-y-1.5 pb-32" data-testid="block-editor">
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="blocks">
           {(provided) => (
             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-1.5">
               {blocks.map((b, idx) => {
                 const meta = TYPES.find((t) => t.type === b.type) || TYPES[0];
+                const query = normalizeText(slashMenu?.query || "");
+                const filteredTypes = TYPES.filter(t => normalizeText(t.label).includes(query));
+                const validSelectedIndex = (slashMenu?.selectedIndex || 0) < filteredTypes.length ? (slashMenu?.selectedIndex || 0) : 0;
+                
                 return (
                   <Draggable key={b.id} draggableId={b.id} index={idx}>
                     {(provided) => {
@@ -280,19 +326,23 @@ export default function BlockEditor({ blocks, onChange }) {
                               <div className="absolute left-8 top-full mt-1 w-64 bg-background border border-border shadow-lg rounded-md overflow-hidden z-50">
                                 <div className="px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest bg-muted/50">Transformar em...</div>
                                 <div className="max-h-64 overflow-y-auto p-1">
-                                  {TYPES.map((t) => (
-                                    <button
-                                      key={t.type}
-                                      onClick={() => {
-                                        updateBlock(b.id, { type: t.type, content: "" });
-                                        setSlashMenu(null);
-                                        setTimeout(() => refs.current[b.id]?.focus(), 10);
-                                      }}
-                                      className="w-full text-left px-2 py-1.5 text-sm flex items-center rounded-sm hover:bg-muted focus:bg-muted outline-none transition-colors"
-                                    >
-                                      <t.icon className="w-4 h-4 mr-2 text-muted-foreground" /> {t.label}
-                                    </button>
-                                  ))}
+                                  {filteredTypes.map((t, i) => {
+                                    const isSelected = i === validSelectedIndex;
+                                    return (
+                                      <button
+                                        key={t.type}
+                                        id={`slash-menu-item-${i}`}
+                                        onClick={() => {
+                                          updateBlock(b.id, { type: t.type, content: "" });
+                                          setSlashMenu(null);
+                                          setTimeout(() => refs.current[b.id]?.focus(), 10);
+                                        }}
+                                        className={`w-full text-left px-2 py-1.5 text-sm flex items-center rounded-sm hover:bg-muted focus:bg-muted outline-none transition-colors ${isSelected ? "bg-muted" : ""}`}
+                                      >
+                                        <t.icon className="w-4 h-4 mr-2 text-muted-foreground" /> {t.label}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
@@ -320,7 +370,7 @@ export default function BlockEditor({ blocks, onChange }) {
 
 function BlockHandle({ b, insertBlock, removeBlock, updateBlock, dragHandleProps }) {
   return (
-    <div className="flex items-center opacity-0 group-hover:opacity-100 transition shrink-0 pt-1.5">
+    <div className="flex items-center opacity-0 group-hover:opacity-100 transition shrink-0 pt-1.5 gap-0.5">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="p-0.5 hover:bg-slate-100 rounded text-slate-400" data-testid={`block-add-${b.id}`}>
@@ -335,10 +385,15 @@ function BlockHandle({ b, insertBlock, removeBlock, updateBlock, dragHandleProps
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <div className="p-0.5 hover:bg-slate-100 rounded text-slate-400 cursor-grab active:cursor-grabbing flex items-center" data-testid={`block-handle-${b.id}`} {...dragHandleProps}>
+        <GripVertical className="w-4 h-4" />
+      </div>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="p-0.5 hover:bg-slate-100 rounded text-slate-400" data-testid={`block-handle-${b.id}`} {...dragHandleProps}>
-            <GripVertical className="w-4 h-4" />
+          <button className="p-0.5 hover:bg-slate-100 rounded text-slate-400" data-testid={`block-options-${b.id}`}>
+            <MoreVertical className="w-4 h-4" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">

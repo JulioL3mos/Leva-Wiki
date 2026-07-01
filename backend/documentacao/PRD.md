@@ -48,7 +48,7 @@ Plataforma corporativa interna de gestão de conhecimento ("Portal LEVA") para u
 - Página de busca dedicada com facets
 
 ### P2 (médio prazo)
-- IA integrada para sugestões/resumos (Emergent LLM)
+- IA integrada para sugestões/resumos 
 - Chatbot interno com RAG sobre a base de conhecimento
 - Busca semântica
 - Trilhas de aprendizado (sequências de artigos)

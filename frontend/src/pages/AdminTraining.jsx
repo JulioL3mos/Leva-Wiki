@@ -24,12 +24,14 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/AuthContext";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const emptyBlock = () => ({ id: uid(), type: "paragraph", content: "", meta: {} });
 
 export default function AdminTraining() {
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedCourse, setExpandedCourse] = useState(null);
@@ -130,6 +132,20 @@ export default function AdminTraining() {
     }
   };
 
+  const deleteCourse = async (courseId) => {
+    if (!window.confirm("Tem certeza que deseja excluir este curso e todos os seus módulos? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+    try {
+      await api.delete(`/training/courses/${courseId}`);
+      toast.success("Curso excluído com sucesso");
+      setCourseDialog(false);
+      loadCourses();
+    } catch (e) {
+      toast.error("Erro ao excluir curso");
+    }
+  };
+
   // ---- Module CRUD ----
   const openNewModule = (courseId, modules) => {
     setEditingModule(null);
@@ -171,6 +187,20 @@ export default function AdminTraining() {
       loadCourses();
     } catch (e) {
       toast.error("Erro ao salvar módulo");
+    }
+  };
+
+  const deleteModule = async (moduleId) => {
+    if (!window.confirm("Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+    try {
+      await api.delete(`/training/modules/${moduleId}`);
+      toast.success("Módulo excluído com sucesso");
+      setModuleDialog(false);
+      loadCourses();
+    } catch (e) {
+      toast.error("Erro ao excluir módulo");
     }
   };
 
@@ -489,13 +519,20 @@ export default function AdminTraining() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCourseDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={saveCourse} disabled={!courseForm.title.trim()}>
-              {editingCourse ? "Salvar" : "Criar Curso"}
-            </Button>
+          <DialogFooter className="sm:justify-between">
+            {editingCourse && user?.role === "admin" ? (
+              <Button variant="destructive" onClick={() => deleteCourse(editingCourse.id)}>
+                <Trash2 className="w-4 h-4 mr-2" /> Excluir
+              </Button>
+            ) : <div />}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setCourseDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={saveCourse} disabled={!courseForm.title.trim()}>
+                {editingCourse ? "Salvar" : "Criar Curso"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -571,13 +608,20 @@ export default function AdminTraining() {
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModuleDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={saveModule} disabled={!moduleForm.title.trim()}>
-              {editingModule ? "Salvar" : "Criar Módulo"}
-            </Button>
+          <DialogFooter className="sm:justify-between">
+            {editingModule && user?.role === "admin" ? (
+              <Button variant="destructive" onClick={() => deleteModule(editingModule.id)}>
+                <Trash2 className="w-4 h-4 mr-2" /> Excluir
+              </Button>
+            ) : <div />}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setModuleDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={saveModule} disabled={!moduleForm.title.trim()}>
+                {editingModule ? "Salvar" : "Criar Módulo"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

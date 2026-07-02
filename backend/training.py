@@ -147,6 +147,19 @@ async def update_course(course_id: str, req: CourseUpdate, request: Request, use
         raise HTTPException(status_code=404, detail="Curso não encontrado")
     return {"ok": True}
 
+@router.delete("/training/courses/{course_id}")
+async def delete_course(course_id: str, request: Request, user: dict = Depends(require_role("admin"))):
+    db = request.app.state.db
+    res = await db.courses.delete_one({"id": course_id})
+    if not res.deleted_count:
+        raise HTTPException(status_code=404, detail="Curso não encontrado")
+    
+    await db.modules.delete_many({"course_id": course_id})
+    await db.user_progress.delete_many({"course_id": course_id})
+    await db.quiz_results.delete_many({"course_id": course_id})
+    return {"ok": True}
+
+
 
 # ---------- Module Endpoints ----------
 
@@ -181,6 +194,16 @@ async def update_module(module_id: str, req: ModuleUpdate, request: Request, use
     res = await db.modules.update_one({"id": module_id}, {"$set": update_data})
     if not res.matched_count:
         raise HTTPException(status_code=404, detail="Módulo não encontrado")
+    return {"ok": True}
+
+@router.delete("/training/modules/{module_id}")
+async def delete_module(module_id: str, request: Request, user: dict = Depends(require_role("admin"))):
+    db = request.app.state.db
+    res = await db.modules.delete_one({"id": module_id})
+    if not res.deleted_count:
+        raise HTTPException(status_code=404, detail="Módulo não encontrado")
+    
+    await db.quiz_results.delete_many({"module_id": module_id})
     return {"ok": True}
 
 @router.post("/training/modules/{module_id}/questions")

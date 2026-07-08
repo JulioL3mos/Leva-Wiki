@@ -49,15 +49,21 @@ def editor_session():
 
 
 @pytest.fixture(scope="session")
-def viewer_session():
-    s = new_session()
+def viewer_session(admin_session):
     email = f"test_viewer_{uuid.uuid4().hex[:8]}@example.com"
-    r = s.post(
+    r = admin_session.post(
         f"{BASE_URL}/api/auth/register",
         json={"email": email, "password": "viewer123", "name": "TEST Viewer"},
         timeout=15,
     )
     assert r.status_code == 200, f"viewer register failed: {r.status_code} {r.text}"
+    s = new_session()
+    r2 = s.post(
+        f"{BASE_URL}/api/auth/login",
+        json={"email": email, "password": "viewer123"},
+        timeout=15,
+    )
+    assert r2.status_code == 200, f"viewer login failed: {r2.status_code} {r2.text}"
     return s, email
 
 
@@ -186,6 +192,9 @@ class TestWiki:
         r1 = admin_session.get(f"{BASE_URL}/api/wiki/articles/{aid}")
         assert r1.status_code == 200
         v1 = r1.json()["view_count"]
+        # Explicitly increment views via the /view endpoint
+        rv = admin_session.post(f"{BASE_URL}/api/wiki/articles/{aid}/view")
+        assert rv.status_code == 200
         r2 = admin_session.get(f"{BASE_URL}/api/wiki/articles/{aid}")
         v2 = r2.json()["view_count"]
         assert v2 > v1
@@ -288,9 +297,8 @@ class TestAdmin:
 
     def test_update_user_role(self, admin_session, viewer_session):
         # Create a fresh test user to mutate
-        s = new_session()
         email = f"test_role_{uuid.uuid4().hex[:6]}@example.com"
-        s.post(f"{BASE_URL}/api/auth/register", json={"email": email, "password": "pwd123", "name": "Role Test"})
+        admin_session.post(f"{BASE_URL}/api/auth/register", json={"email": email, "password": "pwd123", "name": "Role Test"})
         users = admin_session.get(f"{BASE_URL}/api/admin/users").json()
         target = next(u for u in users if u["email"] == email)
         r = admin_session.patch(f"{BASE_URL}/api/admin/users/{target['id']}", json={"role": "editor"})
@@ -304,17 +312,17 @@ class TestAdmin:
 
 # ---------------- Change Password ----------------
 class TestChangePassword:
-    def test_change_and_relogin(self):
+    def test_change_and_relogin(self, admin_session):
         """Create a user, change their password, verify old fails and new works."""
-        s = new_session()
         email = f"test_pw_{uuid.uuid4().hex[:6]}@example.com"
         old_pw = "oldpassword1"
         new_pw = "newpassword2"
 
         # Register
-        r = s.post(f"{BASE_URL}/api/auth/register",
-                   json={"email": email, "password": old_pw, "name": "PW Test User"})
+        r = admin_session.post(f"{BASE_URL}/api/auth/register",
+                               json={"email": email, "password": old_pw, "name": "PW Test User"})
         assert r.status_code == 200
+        s = new_session()
 
         # Login
         r = s.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": old_pw})

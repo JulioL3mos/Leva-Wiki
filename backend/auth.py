@@ -5,7 +5,9 @@ import bcrypt
 import jwt
 import secrets
 from datetime import datetime, timezone, timedelta
+# pyrefly: ignore [missing-import]
 from fastapi import APIRouter, HTTPException, Request, Response, Depends
+# pyrefly: ignore [missing-import]
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
@@ -310,7 +312,8 @@ async def seed_admin(db):
     # Seed test editor user
     editor_email = "editor@levaportal.com"
     editor_password = "editor123"
-    if not await db.users.find_one({"email": editor_email}):
+    existing_editor = await db.users.find_one({"email": editor_email})
+    if not existing_editor:
         await db.users.insert_one({
             "id": str(uuid.uuid4()),
             "email": editor_email,
@@ -322,6 +325,11 @@ async def seed_admin(db):
             "created_at": datetime.now(timezone.utc).isoformat(),
             "is_active": True,
         })
+    elif not verify_password(editor_password, existing_editor["password_hash"]):
+        await db.users.update_one(
+            {"email": editor_email},
+            {"$set": {"password_hash": hash_password(editor_password), "role": "editor", "department": "Vendas"}}
+        )
 
     # Write credentials file
     try:

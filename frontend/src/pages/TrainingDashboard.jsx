@@ -56,14 +56,21 @@ export default function TrainingDashboard() {
     );
   }
 
+  const completed = courses.filter((c) => {
+    const p = getProgress(c.id);
+    return p && c._moduleCount > 0 && p.completed_modules.length >= c._moduleCount;
+  });
+
   const inProgress = courses.filter((c) => {
     const p = getProgress(c.id);
-    return p && p.completed_modules.length > 0;
+    const isCompleted = p && c._moduleCount > 0 && p.completed_modules.length >= c._moduleCount;
+    return p && p.completed_modules.length > 0 && !isCompleted;
   });
 
   const available = courses.filter((c) => {
     const p = getProgress(c.id);
-    return !p || p.completed_modules.length === 0;
+    const isCompleted = p && c._moduleCount > 0 && p.completed_modules.length >= c._moduleCount;
+    return (!p || p.completed_modules.length === 0) && !isCompleted;
   });
 
   return (
@@ -89,12 +96,7 @@ export default function TrainingDashboard() {
         <StatCard
           icon={Trophy}
           label="Concluídos"
-          value={
-            courses.filter((c) => {
-              const p = getProgress(c.id);
-              return p && c._moduleCount && p.completed_modules.length >= c._moduleCount;
-            }).length
-          }
+          value={completed.length}
         />
       </div>
 
@@ -117,21 +119,11 @@ export default function TrainingDashboard() {
       )}
 
       {/* Available Courses */}
-      <div className="mt-10">
-        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-4 flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5" /> {inProgress.length > 0 ? "Outros cursos" : "Cursos disponíveis"}
-        </div>
-        {available.length === 0 && courses.length === 0 ? (
-          <div className="surface p-12 text-center">
-            <GraduationCap className="w-10 h-10 mx-auto text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground text-sm">
-              Nenhum curso disponível no momento.
-              {user?.role === "admin" && (
-                <> <Link to="/admin" className="underline text-foreground/80">Crie o primeiro curso</Link>.</>
-              )}
-            </p>
+      {available.length > 0 && (
+        <div className="mt-10">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-4 flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5" /> {inProgress.length > 0 ? "Outros cursos" : "Cursos disponíveis"}
           </div>
-        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {available.map((course) => (
               <CourseCard
@@ -141,8 +133,44 @@ export default function TrainingDashboard() {
               />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Completed Courses */}
+      {completed.length > 0 && (
+        <div className="mt-10">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-4 flex items-center gap-1.5">
+            <Trophy className="w-3.5 h-3.5" /> Cursos concluídos
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {completed.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                progress={getProgress(course.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State (when no courses at all exist) */}
+      {courses.length === 0 && (
+        <div className="mt-10">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-4 flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5" /> Cursos disponíveis
+          </div>
+          <div className="surface p-12 text-center">
+            <GraduationCap className="w-10 h-10 mx-auto text-muted-foreground/40 mb-4" />
+            <p className="text-muted-foreground text-sm">
+              Nenhum curso disponível no momento.
+              {user?.role === "admin" && (
+                <> <Link to="/admin" className="underline text-foreground/80">Crie o primeiro curso</Link>.</>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

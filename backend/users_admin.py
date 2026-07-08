@@ -43,11 +43,26 @@ async def update_user(user_id: str, req: UserUpdate, request: Request, user: dic
 async def delete_user(user_id: str, request: Request, user: dict = Depends(require_role("admin"))):
     if user_id == user["id"]:
         raise HTTPException(status_code=400, detail="Não é possível excluir a si mesmo")
+    
     db = request.app.state.db
-    res = await db.users.delete_one({"id": user_id})
-    if not res.deleted_count:
+    
+    # Verificar se o usuário existe
+    target_user = await db.users.find_one({"id": user_id})
+    if not target_user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    return {"deleted": True}
+    
+    # Delete em cascata - remover dados associados
+    await db.articles.delete_many({"author_id": user_id})
+    await db.user_progress.delete_many({"user_id": user_id})
+    await db.quiz_results.delete_many({"user_id": user_id})
+    
+    # Deletar o usuário
+    await db.users.delete_one({"id": user_id})
+    
+    return {
+        "deleted": True,
+        "message": f"Usuário {target_user.get('name', 'desconhecido')} e seus dados foram removidos com sucesso"
+    }
 
 
 @router.get("/admin/pending-articles")

@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Check, X, Shield, ExternalLink, KeyRound, UserPlus } from "lucide-react";
+import { Check, X, Shield, ExternalLink, KeyRound, UserPlus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import AdminTraining from "./AdminTraining";
@@ -34,6 +34,9 @@ export default function AdminPage() {
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "viewer", department: "Geral" });
   const [newUserLoading, setNewUserLoading] = useState(false);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
+  const [userToDelete, setUserToDelete] = useState({ userId: "", userName: "" });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const loadAll = async () => {
     const [u, p] = await Promise.all([
@@ -104,6 +107,21 @@ export default function AdminPage() {
       toast.error(err.response?.data?.detail || "Erro ao criar usuário");
     } finally {
       setNewUserLoading(false);
+    }
+  };
+
+  const deleteUser = async () => {
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/admin/users/${userToDelete.userId}`);
+      toast.success(`Usuário ${userToDelete.userName} removido com sucesso!`);
+      setDeleteConfirmDialog(false);
+      setUserToDelete({ userId: "", userName: "" });
+      loadAll();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Erro ao deletar usuário");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -204,6 +222,18 @@ export default function AdminPage() {
                 >
                   <KeyRound className="w-4 h-4" />
                 </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                  onClick={() => {
+                    setUserToDelete({ userId: u.id, userName: u.name });
+                    setDeleteConfirmDialog(true);
+                  }}
+                  data-testid={`delete-user-${u.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             ))}
           </div>
@@ -238,6 +268,29 @@ export default function AdminPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
             <Button onClick={resetPassword} disabled={resetLoading}>
               {resetLoading ? "Salvando..." : "Confirmar Nova Senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialog} onOpenChange={setDeleteConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirmar Exclusão</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir o usuário <strong className="text-foreground">{userToDelete.userName}</strong>?
+            </p>
+            <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950 p-3 rounded border border-red-200 dark:border-red-800">
+              ⚠️ Esta ação é irreversível e removerá todos os dados associados (artigos, progresso de treinamento, etc).
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmDialog(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={deleteUser} disabled={deleteLoading} data-testid="confirm-delete-user">
+              {deleteLoading ? "Deletando..." : "Sim, excluir usuário"}
             </Button>
           </DialogFooter>
         </DialogContent>

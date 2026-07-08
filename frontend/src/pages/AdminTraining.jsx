@@ -43,6 +43,9 @@ export default function AdminTraining() {
   const [editingModule, setEditingModule] = useState(null);
   const [editingQuizId, setEditingQuizId] = useState(null);
   const [editingContentModule, setEditingContentModule] = useState(null);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState({ type: null, id: null, name: "" });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Course form
   const [courseForm, setCourseForm] = useState({ title: "", description: "", status: "draft", target_departments: [] });
@@ -132,17 +135,23 @@ export default function AdminTraining() {
     }
   };
 
+  const openDeleteCourseConfirm = (courseId, courseName) => {
+    setItemToDelete({ type: "course", id: courseId, name: courseName });
+    setDeleteConfirmDialog(true);
+  };
+
   const deleteCourse = async (courseId) => {
-    if (!window.confirm("Tem certeza que deseja excluir este curso e todos os seus módulos? Esta ação não pode ser desfeita.")) {
-      return;
-    }
+    setDeleteLoading(true);
     try {
       await api.delete(`/training/courses/${courseId}`);
       toast.success("Curso excluído com sucesso");
       setCourseDialog(false);
+      setDeleteConfirmDialog(false);
       loadCourses();
     } catch (e) {
       toast.error("Erro ao excluir curso");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -190,17 +199,23 @@ export default function AdminTraining() {
     }
   };
 
+  const openDeleteModuleConfirm = (moduleId, moduleName) => {
+    setItemToDelete({ type: "module", id: moduleId, name: moduleName });
+    setDeleteConfirmDialog(true);
+  };
+
   const deleteModule = async (moduleId) => {
-    if (!window.confirm("Tem certeza que deseja excluir este módulo? Esta ação não pode ser desfeita.")) {
-      return;
-    }
+    setDeleteLoading(true);
     try {
       await api.delete(`/training/modules/${moduleId}`);
       toast.success("Módulo excluído com sucesso");
       setModuleDialog(false);
+      setDeleteConfirmDialog(false);
       loadCourses();
     } catch (e) {
       toast.error("Erro ao excluir módulo");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -521,7 +536,7 @@ export default function AdminTraining() {
           </div>
           <DialogFooter className="sm:justify-between">
             {editingCourse && user?.role === "admin" ? (
-              <Button variant="destructive" onClick={() => deleteCourse(editingCourse.id)}>
+              <Button variant="destructive" onClick={() => openDeleteCourseConfirm(editingCourse.id, editingCourse.title)}>
                 <Trash2 className="w-4 h-4 mr-2" /> Excluir
               </Button>
             ) : <div />}
@@ -610,7 +625,7 @@ export default function AdminTraining() {
           </div>
           <DialogFooter className="sm:justify-between">
             {editingModule && user?.role === "admin" ? (
-              <Button variant="destructive" onClick={() => deleteModule(editingModule.id)}>
+              <Button variant="destructive" onClick={() => openDeleteModuleConfirm(editingModule.id, editingModule.title)}>
                 <Trash2 className="w-4 h-4 mr-2" /> Excluir
               </Button>
             ) : <div />}
@@ -710,6 +725,50 @@ export default function AdminTraining() {
             </Button>
             <Button onClick={saveContent} className="gap-1">
               <Save className="w-4 h-4" /> Salvar Conteúdo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialog} onOpenChange={setDeleteConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">
+              Confirmar Exclusão de {itemToDelete.type === "course" ? "Curso" : "Módulo"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir <strong className="text-foreground">{itemToDelete.name}</strong>?
+            </p>
+            {itemToDelete.type === "course" && (
+              <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950 p-3 rounded border border-red-200 dark:border-red-800">
+                ⚠️ Esta ação é irreversível e removerá também todos os seus módulos, progressos e resultados de quiz.
+              </p>
+            )}
+            {itemToDelete.type === "module" && (
+              <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950 p-3 rounded border border-red-200 dark:border-red-800">
+                ⚠️ Esta ação é irreversível e removerá também todos os resultados de quiz deste módulo.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (itemToDelete.type === "course") {
+                  deleteCourse(itemToDelete.id);
+                } else if (itemToDelete.type === "module") {
+                  deleteModule(itemToDelete.id);
+                }
+              }}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? "Deletando..." : `Sim, excluir ${itemToDelete.type === "course" ? "curso" : "módulo"}`}
             </Button>
           </DialogFooter>
         </DialogContent>

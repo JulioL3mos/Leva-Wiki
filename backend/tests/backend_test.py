@@ -542,6 +542,14 @@ class TestTraining:
         assert body["passed"] is True
         assert body["score"] == 100
 
+    def test_course_list_returns_module_count(self, viewer_session):
+        s, _ = viewer_session
+        r = s.get(f"{BASE_URL}/api/training/courses")
+        assert r.status_code == 200
+        course = next((c for c in r.json() if c["id"] == pytest.test_course_id), None)
+        assert course is not None
+        assert course.get("_moduleCount") == 2
+
     def test_quiz_submission_wrong(self, viewer_session):
         s, _ = viewer_session
         r = s.post(

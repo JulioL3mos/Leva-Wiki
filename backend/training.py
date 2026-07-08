@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Request, Depends
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, Request, Depends # type: ignore
+from pydantic import BaseModel, Field # type: ignore
 
 from auth import get_current_user, require_role
 
@@ -84,6 +84,9 @@ async def list_courses(request: Request, user: dict = Depends(get_current_user))
     
     cursor = db.courses.find(query, {"_id": 0}).sort("created_at", -1)
     courses = await cursor.to_list(length=100)
+    for course in courses:
+        module_count = await db.modules.count_documents({"course_id": course["id"]})
+        course["_moduleCount"] = module_count
     return courses
 
 @router.post("/training/courses")

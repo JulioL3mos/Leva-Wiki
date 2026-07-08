@@ -7,6 +7,7 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { ChevronLeft, Edit3, Eye, Clock, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
 
 export default function ArticleViewPage() {
   const { id } = useParams();
@@ -15,6 +16,8 @@ export default function ArticleViewPage() {
   const [article, setArticle] = useState(null);
   const [versions, setVersions] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const viewedRef = useRef(false);
 
   useEffect(() => {
@@ -36,11 +39,21 @@ export default function ArticleViewPage() {
     setShowVersions(true);
   };
 
+  const openDeleteConfirm = () => {
+    setDeleteConfirmDialog(true);
+  };
+
   const handleDelete = async () => {
-    if (!window.confirm("Excluir este artigo permanentemente?")) return;
-    await api.delete(`/wiki/articles/${id}`);
-    toast.success("Artigo excluído");
-    navigate("/wiki");
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/wiki/articles/${id}`);
+      toast.success("Artigo excluído");
+      navigate("/wiki");
+    } catch (e) {
+      toast.error("Erro ao excluir artigo");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   if (article === null) {
@@ -85,7 +98,7 @@ export default function ArticleViewPage() {
                 <Button variant="outline" size="sm" onClick={() => navigate(`/wiki/${id}/editar`)} data-testid="btn-edit" className="bg-background">
                   <Edit3 className="w-3.5 h-3.5 mr-1.5" /> Editar
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700 bg-background border-red-100 hover:bg-red-50 dark:hover:bg-red-950" data-testid="btn-delete">
+                <Button variant="outline" size="sm" onClick={openDeleteConfirm} className="text-red-600 hover:text-red-700 bg-background border-red-100 hover:bg-red-50 dark:hover:bg-red-950" data-testid="btn-delete">
                   <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Excluir
                 </Button>
               </>
@@ -154,6 +167,31 @@ export default function ArticleViewPage() {
           </ul>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialog} onOpenChange={setDeleteConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirmar Exclusão</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir o artigo <strong className="text-foreground">{article?.title}</strong> permanentemente?
+            </p>
+            <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950 p-3 rounded border border-red-200 dark:border-red-800">
+              ⚠️ Esta ação é irreversível.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmDialog(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
+              {deleteLoading ? "Deletando..." : "Sim, excluir artigo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

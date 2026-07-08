@@ -92,11 +92,29 @@ export default function FilesPage() {
     );
   };
 
-  const remove = async (id) => {
-    if (!window.confirm("Excluir arquivo?")) return;
-    await api.delete(`/files/${id}`);
-    toast.success("Arquivo excluído");
-    load();
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState({ id: null, name: "" });
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const openDeleteFileConfirm = (fileId, fileName) => {
+    setFileToDelete({ id: fileId, name: fileName });
+    setDeleteConfirmDialog(true);
+  };
+
+  const remove = async () => {
+    if (!fileToDelete.id) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/files/${fileToDelete.id}`);
+      toast.success("Arquivo excluído");
+      setDeleteConfirmDialog(false);
+      setFileToDelete({ id: null, name: "" });
+      load();
+    } catch (e) {
+      toast.error("Erro ao excluir arquivo");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const canUpload = user?.role === "admin" || user?.role === "editor";
@@ -178,7 +196,7 @@ export default function FilesPage() {
                     Abrir
                   </a>
                   {canUpload && (
-                    <button onClick={() => remove(f.id)} className="text-destructive hover:text-destructive/80" data-testid={`file-delete-${f.id}`}>
+                    <button onClick={() => openDeleteFileConfirm(f.id, f.original_filename)} className="text-destructive hover:text-destructive/80" data-testid={`file-delete-${f.id}`}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -270,6 +288,31 @@ export default function FilesPage() {
             </Button>
             <Button onClick={upload} disabled={!selectedFile || uploading} className="bg-primary text-primary-foreground">
               {uploading ? "Enviando..." : "Confirmar Envio"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete File Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialog} onOpenChange={setDeleteConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirmar Exclusão</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir o arquivo <strong className="text-foreground">{fileToDelete.name}</strong>?
+            </p>
+            <p className="text-xs text-muted-foreground bg-red-50 dark:bg-red-950 p-3 rounded border border-red-200 dark:border-red-800">
+              ⚠️ Esta ação é irreversível.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmDialog(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={remove} disabled={deleteLoading}>
+              {deleteLoading ? "Deletando..." : "Sim, excluir arquivo"}
             </Button>
           </DialogFooter>
         </DialogContent>

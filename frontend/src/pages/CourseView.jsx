@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import QuizPlayer from "../components/QuizPlayer";
+import { renderBlocks } from "../components/BlockEditor";
 
 export default function CourseView() {
   const { id } = useParams();
@@ -231,10 +232,8 @@ export default function CourseView() {
               </h2>
 
               {/* Render block content */}
-              <div className="prose prose-slate dark:prose-invert max-w-none">
-                {(activeModule.content || []).map((block, idx) => (
-                  <RenderBlock key={block.id || idx} block={block} />
-                ))}
+              <div className="prose-leva dark:prose-invert max-w-none">
+                {renderBlocks(activeModule.content)}
                 {(!activeModule.content || activeModule.content.length === 0) && (
                   <p className="text-muted-foreground italic">Este módulo ainda não possui conteúdo.</p>
                 )}
@@ -266,47 +265,4 @@ export default function CourseView() {
       </div>
     </div>
   );
-}
-
-function RenderBlock({ block }) {
-  switch (block.type) {
-    case "h1":
-      return <h1>{block.content}</h1>;
-    case "h2":
-      return <h2>{block.content}</h2>;
-    case "h3":
-      return <h3>{block.content}</h3>;
-    case "paragraph":
-      return <p>{block.content}</p>;
-    case "bulleted":
-      return (
-        <ul>
-          <li>{block.content}</li>
-        </ul>
-      );
-    case "numbered":
-      return (
-        <ol>
-          <li>{block.content}</li>
-        </ol>
-      );
-    case "quote":
-      return <blockquote>{block.content}</blockquote>;
-    case "code":
-      return (
-        <pre>
-          <code>{block.content}</code>
-        </pre>
-      );
-    case "divider":
-      return <hr />;
-    case "image":
-      return (
-        <figure>
-          <img src={block.meta?.url || block.content} alt={block.meta?.alt || ""} />
-        </figure>
-      );
-    default:
-      return <p>{block.content}</p>;
-  }
 }

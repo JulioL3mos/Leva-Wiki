@@ -14,6 +14,7 @@ import { Check, X, Shield, ExternalLink, KeyRound, UserPlus, Trash2 } from "luci
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import AdminTraining from "./AdminTraining";
+import { DEPARTMENT_OPTIONS } from "../lib/departments";
 import {
   Dialog,
   DialogContent,
@@ -200,12 +201,9 @@ export default function AdminPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Geral">Geral</SelectItem>
-                    <SelectItem value="TI">TI</SelectItem>
-                    <SelectItem value="Financeiro">Financeiro</SelectItem>
-                    <SelectItem value="Diretoria">Diretoria</SelectItem>
-                    <SelectItem value="Vendas">Vendas</SelectItem>
-                    <SelectItem value="Pós Vendas">Pós Vendas</SelectItem>
+                    {DEPARTMENT_OPTIONS.map((dept) => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <div className="text-xs text-muted-foreground font-mono w-28 text-right">
@@ -352,12 +350,9 @@ export default function AdminPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Geral">Geral</SelectItem>
-                  <SelectItem value="TI">TI</SelectItem>
-                  <SelectItem value="Financeiro">Financeiro</SelectItem>
-                  <SelectItem value="Diretoria">Diretoria</SelectItem>
-                  <SelectItem value="Vendas">Vendas</SelectItem>
-                  <SelectItem value="Pós Vendas">Pós Vendas</SelectItem>
+                  {DEPARTMENT_OPTIONS.map((dept) => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

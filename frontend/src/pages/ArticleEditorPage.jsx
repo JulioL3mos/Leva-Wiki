@@ -16,6 +16,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { ArrowLeft, Save, Send, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { DEPARTMENT_OPTIONS } from "../lib/departments";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -35,7 +36,7 @@ export default function ArticleEditorPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const AVAILABLE_DEPARTMENTS = ["TI", "Financeiro", "Diretoria", "Vendas", "Pós Vendas"];
+  const AVAILABLE_DEPARTMENTS = DEPARTMENT_OPTIONS.filter((dept) => dept !== "Geral");
 
   const toggleDepartment = (dept) => {
     setTargetDepartments(prev => 

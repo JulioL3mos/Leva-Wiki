@@ -20,8 +20,9 @@ import {
 import { Upload, FileText, FileImage, FileVideo, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../lib/utils";
+import { DEPARTMENT_OPTIONS } from "../lib/departments";
 
-const DEPARTMENTS = ["TI", "Financeiro", "Diretoria", "Vendas", "Pós Vendas"];
+const DEPARTMENTS = DEPARTMENT_OPTIONS.filter((dept) => dept !== "Geral");
 
 const ICON = (ct = "") => {
   if (ct.startsWith("image/")) return FileImage;

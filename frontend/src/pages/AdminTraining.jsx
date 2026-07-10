@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
+import { DEPARTMENT_OPTIONS } from "../lib/departments";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -50,7 +51,7 @@ export default function AdminTraining() {
   // Course form
   const [courseForm, setCourseForm] = useState({ title: "", description: "", status: "draft", target_departments: [] });
 
-  const AVAILABLE_DEPARTMENTS = ["TI", "Financeiro", "Diretoria", "Vendas", "Pós Vendas"];
+  const AVAILABLE_DEPARTMENTS = DEPARTMENT_OPTIONS.filter((dept) => dept !== "Geral");
 
   const toggleCourseDepartment = (dept) => {
     setCourseForm(prev => {

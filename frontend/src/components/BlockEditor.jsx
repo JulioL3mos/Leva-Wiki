@@ -64,11 +64,15 @@ function blockClass(type) {
 
 function ImageBlock({ b, updateBlock }) {
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const dropZoneRef = useRef(null);
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file) => {
+    if (!file || !file.type.startsWith("image/")) {
+      alert("Apenas imagens são permitidas");
+      return;
+    }
 
     setUploading(true);
     const formData = new FormData();
@@ -76,13 +80,51 @@ function ImageBlock({ b, updateBlock }) {
 
     try {
       const { data } = await api.post("/wiki/images/upload", formData);
-      updateBlock(b.id, { content: data.url, meta: { ...b.meta, filename: file.name } });
+      updateBlock(b.id, { content: data.url, meta: { ...b.meta, filename: file.name || "pasted-image.png" } });
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Falha no upload da imagem");
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) uploadFile(file);
+  };
+
+  const handlePaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) uploadFile(file);
+        return;
+      }
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      uploadFile(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOver(false);
   };
 
   if (b.content) {
@@ -101,21 +143,33 @@ function ImageBlock({ b, updateBlock }) {
   }
 
   return (
-    <div className="w-full my-2">
-      <button
+    <div
+      className="w-full my-2"
+      onPaste={handlePaste}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
+      <div
+        ref={dropZoneRef}
+        tabIndex={0}
         onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
-        className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-border rounded-lg hover:border-muted-foreground hover:bg-muted transition text-muted-foreground"
+        className={`flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition cursor-pointer outline-none
+          ${dragOver
+            ? "border-primary bg-primary/5 scale-[1.01]"
+            : "border-border hover:border-muted-foreground hover:bg-muted"
+          } text-muted-foreground`}
       >
         {uploading ? (
           <span className="flex items-center gap-2"><Upload className="w-5 h-5 animate-bounce" /> Enviando…</span>
         ) : (
           <>
             <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
-            <span className="text-sm font-medium">Clique para fazer upload de um print ou imagem</span>
+            <span className="text-sm font-medium">Clique para fazer upload de uma imagem</span>
+            <span className="text-xs text-muted-foreground/70 mt-1">ou cole (Ctrl+V) / arraste uma imagem aqui</span>
           </>
         )}
-      </button>
+      </div>
       <input
         type="file"
         ref={fileInputRef}
@@ -129,7 +183,13 @@ function ImageBlock({ b, updateBlock }) {
 
 export default function BlockEditor({ blocks, onChange }) {
   const refs = useRef({});
+  const blocksRef = useRef(blocks);
   const [slashMenu, setSlashMenu] = useState(null);
+
+  // Manter ref sempre sincronizado com o último valor de blocks
+  useEffect(() => {
+    blocksRef.current = blocks;
+  }, [blocks]);
 
   useEffect(() => {
     if (slashMenu) {
@@ -153,6 +213,46 @@ export default function BlockEditor({ blocks, onChange }) {
     setTimeout(() => {
       refs.current[newBlock.id]?.focus();
     }, 10);
+    return newBlock;
+  };
+
+  // Upload de imagem colada em qualquer bloco de texto
+  const handleGlobalPaste = async (e, b) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) return;
+
+        // Cria um bloco de imagem logo abaixo do bloco atual
+        const newBlock = { id: uid(), type: "image", content: "", meta: {} };
+        const idx = blocks.findIndex((x) => x.id === b.id);
+        const next = [...blocks];
+        next.splice(idx + 1, 0, newBlock);
+        onChange(next);
+
+        // Faz o upload da imagem colada
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const { data } = await api.post("/wiki/images/upload", formData);
+          // Usa blocksRef para pegar o array mais recente após o React re-render
+          const latestBlocks = blocksRef.current;
+          onChange(latestBlocks.map((block) =>
+            block.id === newBlock.id
+              ? { ...block, content: data.url, meta: { filename: "pasted-image.png" } }
+              : block
+          ));
+        } catch (error) {
+          console.error("Paste upload failed:", error);
+          alert("Falha no upload da imagem colada");
+        }
+        return;
+      }
+    }
   };
 
   const removeBlock = (id) => {
@@ -305,6 +405,7 @@ export default function BlockEditor({ blocks, onChange }) {
                                 ref={(el) => (refs.current[b.id] = el)}
                                 value={b.content}
                                 onChange={(e) => handleInput(e, b)}
+                                onPaste={(e) => handleGlobalPaste(e, b)}
                                 placeholder={meta.placeholder}
                                 rows={Math.max(3, b.content.split("\n").length)}
                                 className={blockClass(b.type)}
@@ -317,6 +418,7 @@ export default function BlockEditor({ blocks, onChange }) {
                                 value={b.content}
                                 onChange={(e) => handleInput(e, b)}
                                 onKeyDown={(e) => handleKeyDown(e, b, idx)}
+                                onPaste={(e) => handleGlobalPaste(e, b)}
                                 placeholder={meta.placeholder}
                                 className={blockClass(b.type)}
                                 data-testid={`block-input-${b.id}`}
